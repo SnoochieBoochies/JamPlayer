@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference
+        android:key="pref_sync"
+        android:title="TITLE"
+        android:summary="SUMMARY"
+        android:defaultValue="true" />
+    <ListPreference
+        android:dependency="pref_sync"
+        android:key="pref_syncConnectionType"
+        android:title="LIST_TITLE"
+        android:dialogTitle="DIALOG_TITLE"
+        android:defaultValue="DEFAULT_VALUE" />
+        <!-- android:entries="@array/pref_syncConnectionTypes_values"-->
+        <!-- android:entryValues="@array/pref_syncConnectionTypes_values" -->
+
+</PreferenceScreen>

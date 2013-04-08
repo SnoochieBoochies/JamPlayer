@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/connect_gplay_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="20dp"
+        android:background="#0000"
+        android:drawableRight="@drawable/gplay"
+        android:text="Connect with Google Play" />
+    
+
+    <Button
+        android:id="@+id/connect_dropbox_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/connect_gplay_btn"
+        android:layout_marginTop="70dp"
+        android:background="#0000"
+        android:drawableRight="@drawable/dropbox"
+        android:text="Connect with Dropbox" />
+
+        <!-- android:text="Connect with SoundCloud" /> -->
+    <Button
+         android:id="@+id/connect_last_fm_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/connect_dropbox_btn"
+        android:layout_marginTop="70dp"
+        android:background="#0000"
+        android:drawableRight="@drawable/last_fm"
+        android:text="Connect with Last.fm" />
+
+    <Button
+        android:id="@+id/connect_scloud_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/connect_last_fm_btn"
+        android:layout_marginTop="30dp"
+        android:background="#0000"
+        android:drawableRight="@drawable/btn_connect_sc_l" />
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="@android:attr/progressBarStyleLarge"
+        android:indeterminateBehavior="cycle"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_below="@+id/connect_dropbox_btn"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone" />
+
+</RelativeLayout>

@@ -1,0 +1,20 @@
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+     <ImageView
+        android:id="@+id/sd_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:background="@android:drawable/stat_notify_sdcard"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/sd_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:padding="8dip"
+        android:text="No SD card."
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:visibility="gone" />
+
+</merge>

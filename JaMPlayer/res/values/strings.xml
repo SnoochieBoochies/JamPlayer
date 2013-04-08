@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">JaM Player</string>
+    <string name="menu_settings">Settings</string>
+    <string name="local_media">View music on this device</string>
+    <string name="cloud_media">View Cloud Music</string>
+	<color name="state1_text_color">#FFFFFF</color>
+	<string name="welcome">Welcome to JaM!</string>
+	<string name="local_storage">Local Storage</string>
+	<string name="play_list"></string>
+	<string name="notification_artist_album"><xliff:g id="album">%2$s</xliff:g>\n<xliff:g id="artist">%1$s</xliff:g></string>
+</resources>
