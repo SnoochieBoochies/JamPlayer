@@ -1,21 +1,44 @@
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- <resources xmlns:android="http://schemas.android.com/apk/res/android"> -->
 
     <!--
         Base application theme, dependent on API level. This theme is replaced
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
-    <style name="AppBaseTheme" parent="android:Theme.Light">
+    <!-- <style name="AppBaseTheme" parent="android:Theme.Light"> -->
         <!--
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
             backward-compatibility can go here.
         -->
-    </style>
+    <!-- </style> -->
 
     <!-- Application theme. -->
-    <style name="AppTheme" parent="AppBaseTheme">
+    <!-- <style name="AppTheme" parent="AppBaseTheme">-->
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
 		<!-- <item name="android:background">@drawable/bg</item>-->
+    <!-- </style> -->
+
+<!-- </resources> -->
+<!-- 
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <style name="Theme.Default" parent="@android:style/Theme"></style>
+    <style name="Theme.NoTitle" parent="@android:style/Theme.NoTitleBar"></style>
+    <style name="Theme.FullScreen" parent="@android:style/Theme.NoTitleBar.Fullscreen"></style>
+</resources>
+-->
+<resources>
+
+    <style name="MyCustomTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:tabWidgetStyle">@style/CustomTabWidget</item>
+    </style>
+
+    <style name="CustomTabWidget" parent="@android:style/Widget.TabWidget">
+        <item name="android:textAppearance">@style/CustomTabWidgetText</item>
+    </style>
+
+    <style name="CustomTabWidgetText" parent="@android:style/TextAppearance.Widget.TabWidget">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
 </resources>

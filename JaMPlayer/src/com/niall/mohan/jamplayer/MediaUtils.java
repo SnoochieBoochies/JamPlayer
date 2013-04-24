@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.niall.mohan.jamplayer.adapters.JamSongs;
+import com.niall.mohan.jamplayer.tabs.ExpandableListAdapter;
+import com.niall.mohan.jamplayer.tabs.TabsActivity;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -33,13 +35,12 @@ public class MediaUtils {
 
 	public static String MediaUtilsTag = "MediaUtils";
 
-	public static final String Data_Artists = "artist";
-	public static final String Data_Playlists = "playlist";
-	public static final String Data_Albums = "album";
-	public static final String Data_Songs = "songs";
+	public static final String Data_Googles = "Google";
+	public static final String Data_SoundCloud = "Soundcloud";
+	public static final String Data_Dropbox = "Dropbox";
+	public static final String Data_Local = "Local";
 
-	public String Data_TYPE = Data_Songs;
-	public static final String DEFAULT_PLAYLIST = "default_playlist";
+	public String Data_TYPE = Data_Local;
 	private static IJamService sService;
 
 	private static final Uri sArtworkUri = Uri
@@ -55,7 +56,7 @@ public class MediaUtils {
 
 	private static MediaUtils mediaUtils;
 
-	public static MediaUtils getInstense() {
+	public static MediaUtils getInstance() {
 		if (mediaUtils == null) {
 			mediaUtils = new MediaUtils();
 		}
@@ -185,23 +186,24 @@ public class MediaUtils {
 		List<String> father = null;
 		List<JamSongs> child = null;
 		ContentResolver resolver = context.getContentResolver();
-		if (Data_Artists.equals(tabId)) {
-			father = find_father_data(resolver, new String[] { tabId });
-			Log.i(MediaUtilsTag, "father:" + father.size());
-			//ExpandAdapter expandAdapter = (ExpandAdapter) MediaTabActivity.exp_list_adapter;
+		//if (Data_Googles.equals(tabId)) {
+		//	father = find_father_data(resolver, new String[] { tabId });
+	//		Log.i(MediaUtilsTag, "father:" + father.size());
+		//	ExpandableListAdapter expandAdapter = (ExpandableListAdapter) TabsActivity.exp_list_adapter;
 			//expandAdapter.onDatasetChanged(father, child);
-			return;
-		} else if (Data_Playlists.equals(tabId)) {
-			MusicTable mediaSqlite = new MusicTable(context);
-			father = mediaSqlite
-					.query(new String[] { MusicDbHelper.PLAYLIST });
-		} else if (Data_Songs.equals(tabId)) {
+		//	return;
+		//} else if (Data_SoundCloud.equals(tabId)) {
+		//	MusicTable mediaSqlite = new MusicTable(context);
+		//	father = mediaSqlite
+		//			.query(new String[] { MusicTable.PLAYLIST });
+		//} else 
+		if (Data_Local.equals(tabId)) {
 			father = find_father_data(resolver,
-					new String[] { MediaStore.Video.Media.TITLE });
+					new String[] { MusicTable.ARTIST });
 		} else {
 			father = find_father_data(resolver, new String[] { tabId });
 		}
-		//MediaAdapter mediaAdapter = (MediaAdapter) MediaTabActivity.displayAdapter;
+		MediaAdapter mediaAdapter = (MediaAdapter) TabsActivity.displayAdapter;
 		//mediaAdapter.onDatasetChanged(father, null);
 	}
 
@@ -216,7 +218,7 @@ public class MediaUtils {
 		cursor.moveToFirst();
 		final int count = cursor.getCount();
 		for (int i = 0; i < count; i++) {
-			JamSongs child = new JamSongs(cursor.getString(0), cursor.getString(1),0,cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5));
+			JamSongs child = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5));
 			childs.add(child);
 			cursor.moveToNext();
 		}

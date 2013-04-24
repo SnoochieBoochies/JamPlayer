@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg"
+    android:background="@drawable/bg3"
     android:orientation="vertical" >
 
     <Button
@@ -13,7 +13,9 @@
         android:layout_alignParentTop="true"
         android:layout_marginTop="20dp"
         android:background="#0000"
+        android:textColor="#FFFF"
         android:drawableRight="@drawable/gplay"
+        android:paddingLeft="40dp"
         android:text="Connect with Google Play" />
     
 
@@ -25,7 +27,9 @@
         android:layout_below="@+id/connect_gplay_btn"
         android:layout_marginTop="70dp"
         android:background="#0000"
+        android:textColor="#FFFF"
         android:drawableRight="@drawable/dropbox"
+        android:paddingLeft="15dp"
         android:text="Connect with Dropbox" />
 
         <!-- android:text="Connect with SoundCloud" /> -->
@@ -37,18 +41,22 @@
         android:layout_below="@+id/connect_dropbox_btn"
         android:layout_marginTop="70dp"
         android:background="#0000"
-        android:drawableRight="@drawable/last_fm"
+		android:textColor="#FFFF"
+        android:drawableRight="@drawable/lastfm_icon_60"
+        android:paddingLeft="10dp"
         android:text="Connect with Last.fm" />
-
+    
     <Button
         android:id="@+id/connect_scloud_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
         android:layout_below="@+id/connect_last_fm_btn"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="70dp"
         android:background="#0000"
-        android:drawableRight="@drawable/btn_connect_sc_l" />
+        android:drawableRight="@drawable/scloud"
+        android:text="Connect with SoundCloud"
+        android:paddingLeft="40dp"
+        android:textColor="#FFFF" />
 
     <ProgressBar
         android:id="@+id/progress"
@@ -59,5 +67,6 @@
         android:layout_below="@+id/connect_dropbox_btn"
         android:layout_centerHorizontal="true"
         android:visibility="gone" />
+
 
 </RelativeLayout>

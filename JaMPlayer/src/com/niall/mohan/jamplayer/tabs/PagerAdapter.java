@@ -1,4 +1,4 @@
-package com.niall.mohan.jamplayer.fragments;
+package com.niall.mohan.jamplayer.tabs;
 
 import java.util.List;
 

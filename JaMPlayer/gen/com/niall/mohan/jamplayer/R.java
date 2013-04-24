@@ -129,116 +129,98 @@ containing a value of this type.
         public static final int zOrderOnTop=0x7f01000d;
     }
     public static final class color {
-        public static final int state1_text_color=0x7f080000;
+        public static final int state1_text_color=0x7f070001;
+        public static final int transparent=0x7f070000;
     }
     public static final class dimen {
-        public static final int play_btn_pad=0x7f070000;
+        public static final int play_btn_pad=0x7f080000;
     }
     public static final class drawable {
         public static final int app_widget_button_center=0x7f020000;
         public static final int appwidget_button_left=0x7f020001;
         public static final int appwidget_divider=0x7f020002;
-        public static final int appwidget_inner_focus_c=0x7f020003;
-        public static final int appwidget_inner_focus_l=0x7f020004;
-        public static final int appwidget_inner_press_c=0x7f020005;
-        public static final int appwidget_inner_press_l=0x7f020006;
-        public static final int bg=0x7f020007;
-        public static final int bg2=0x7f020008;
-        public static final int bg3=0x7f020009;
-        public static final int btn_connect_sc_l=0x7f02000a;
-        public static final int btn_connect_sc_m=0x7f02000b;
-        public static final int buttonbar_active=0x7f02000c;
-        public static final int buttonbar_focused=0x7f02000d;
-        public static final int buttonbar_inactive=0x7f02000e;
-        public static final int buttonbar_pressed=0x7f02000f;
-        public static final int buttonbarbackground=0x7f020010;
-        public static final int dropbox=0x7f020011;
-        public static final int dummy_album_art=0x7f020012;
-        public static final int gplay=0x7f020013;
-        public static final int ic_appwidget_music_pause=0x7f020014;
-        public static final int ic_appwidget_music_play=0x7f020015;
-        public static final int ic_launcher=0x7f020016;
-        public static final int ic_tab_albums_selected=0x7f020017;
-        public static final int ic_tab_albums_unselected=0x7f020018;
-        public static final int ic_tab_artists=0x7f020019;
-        public static final int ic_tab_artists_selected=0x7f02001a;
-        public static final int ic_tab_artists_unselected=0x7f02001b;
-        public static final int ic_tab_playlists=0x7f02001c;
-        public static final int ic_tab_playlists_selected=0x7f02001d;
-        public static final int ic_tab_playlists_unselected=0x7f02001e;
-        public static final int ic_tab_songs=0x7f02001f;
-        public static final int ic_tab_songs_selected=0x7f020020;
-        public static final int ic_tab_songs_unselected=0x7f020021;
-        public static final int ic_tabs_album=0x7f020022;
-        public static final int indicator_ic_mp_playing_large=0x7f020023;
-        public static final int last_fm=0x7f020024;
-        public static final int music_pause_widget=0x7f020025;
-        public static final int music_play_widget=0x7f020026;
-        public static final int playback_toggle=0x7f020027;
-        public static final int playbackstart=0x7f020028;
-        public static final int scloud=0x7f020029;
-        public static final int stat_notify_musicplayer=0x7f02002a;
+        public static final int bg=0x7f020003;
+        public static final int bg2=0x7f020004;
+        public static final int bg3=0x7f020005;
+        public static final int btn_connect_sc_l=0x7f020006;
+        public static final int dropbox=0x7f020007;
+        public static final int dummy_album_art=0x7f020008;
+        public static final int gplay=0x7f020009;
+        public static final int ic_appwidget_music_pause=0x7f02000a;
+        public static final int ic_appwidget_music_play=0x7f02000b;
+        public static final int ic_launcher=0x7f02000c;
+        public static final int indicator_ic_mp_playing_large=0x7f02000d;
+        public static final int last_fm=0x7f02000e;
+        public static final int lastfm_icon_60=0x7f02000f;
+        public static final int music_pause_widget=0x7f020010;
+        public static final int music_play_widget=0x7f020011;
+        public static final int playback_toggle=0x7f020012;
+        public static final int playbackstart=0x7f020013;
+        public static final int scloud=0x7f020014;
     }
     public static final class id {
-        public static final int album_appwidget=0x7f050015;
-        public static final int albumtab=0x7f05000c;
-        public static final int artist=0x7f050017;
-        public static final int artistalbum=0x7f050024;
-        public static final int artisttab=0x7f05000b;
-        public static final int buttonbar=0x7f05000a;
-        public static final int connect_dropbox_btn=0x7f05001e;
-        public static final int connect_gplay_btn=0x7f05001d;
-        public static final int connect_last_fm_btn=0x7f05001f;
-        public static final int connect_scloud_btn=0x7f050020;
-        public static final int control_play=0x7f050018;
+        public static final int album_appwidget=0x7f050014;
+        public static final int artist=0x7f050016;
+        public static final int artistalbum=0x7f050023;
+        public static final int connect_dropbox_btn=0x7f05001d;
+        public static final int connect_gplay_btn=0x7f05001c;
+        public static final int connect_last_fm_btn=0x7f05001e;
+        public static final int connect_scloud_btn=0x7f05001f;
+        public static final int control_play=0x7f050017;
         public static final int control_play_btn=0x7f050009;
+        public static final int exp_list_dropbox=0x7f050025;
+        public static final int exp_list_google=0x7f050024;
+        public static final int exp_list_local=0x7f050026;
+        public static final int google_list=0x7f05000a;
         public static final int hybrid=0x7f050004;
-        public static final int icon=0x7f05001a;
+        public static final int icon=0x7f050019;
         public static final int listView=0x7f050005;
-        public static final int list_item=0x7f050013;
-        public static final int list_item_child=0x7f050011;
-        public static final int list_item_text_child=0x7f050012;
-        public static final int list_item_text_view=0x7f050014;
-        public static final int menu_settings=0x7f050027;
+        public static final int list_item=0x7f05000f;
+        public static final int list_item_child=0x7f05000d;
+        public static final int list_item_text_child=0x7f05000e;
+        public static final int list_item_text_view=0x7f050010;
+        public static final int list_soundcloud=0x7f050027;
+        public static final int local_list_album=0x7f050012;
+        public static final int local_list_artist=0x7f050011;
+        public static final int local_list_song=0x7f050013;
+        public static final int menu_settings=0x7f05002a;
         public static final int none=0x7f050000;
         public static final int normal=0x7f050001;
-        public static final int nowplaying=0x7f050019;
-        public static final int password=0x7f050010;
-        public static final int playlisttab=0x7f05000e;
-        public static final int progress=0x7f050021;
+        public static final int nowplaying=0x7f050018;
+        public static final int password=0x7f05000c;
+        public static final int progress=0x7f050020;
         public static final int satellite=0x7f050002;
-        public static final int sd_icon=0x7f05001b;
-        public static final int sd_message=0x7f05001c;
+        public static final int sd_icon=0x7f05001a;
+        public static final int sd_message=0x7f05001b;
         public static final int songCurrentDurationLabel=0x7f050007;
         public static final int songTotalDurationLabel=0x7f050008;
-        public static final int songtab=0x7f05000d;
         public static final int terrain=0x7f050003;
-        public static final int text1=0x7f050022;
+        public static final int text1=0x7f050021;
         public static final int timerDisplay=0x7f050006;
-        public static final int title=0x7f050016;
-        public static final int trackname=0x7f050023;
-        public static final int username=0x7f05000f;
-        public static final int viewpager=0x7f050025;
-        public static final int webview=0x7f050026;
+        public static final int title=0x7f050015;
+        public static final int trackname=0x7f050022;
+        public static final int username=0x7f05000b;
+        public static final int viewpager=0x7f050028;
+        public static final int webview=0x7f050029;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
-        public static final int buttonbar=0x7f030001;
+        public static final int google_tab_layout=0x7f030001;
         public static final int last_fm_signin=0x7f030002;
         public static final int list_item_child=0x7f030003;
         public static final int list_item_parent=0x7f030004;
-        public static final int media_picker_activity=0x7f030005;
-        public static final int music_appwidget=0x7f030006;
-        public static final int nowplaying=0x7f030007;
-        public static final int sd_error=0x7f030008;
-        public static final int settings_layout=0x7f030009;
-        public static final int song=0x7f03000a;
-        public static final int song_list=0x7f03000b;
-        public static final int statusbar=0x7f03000c;
-        public static final int tab1_layout=0x7f03000d;
+        public static final int local_tab_layout=0x7f030005;
+        public static final int main=0x7f030006;
+        public static final int music_appwidget=0x7f030007;
+        public static final int nowplaying=0x7f030008;
+        public static final int sd_error=0x7f030009;
+        public static final int settings_layout=0x7f03000a;
+        public static final int song=0x7f03000b;
+        public static final int song_list=0x7f03000c;
+        public static final int statusbar=0x7f03000d;
         public static final int tab2_layout=0x7f03000e;
         public static final int tab3_layout=0x7f03000f;
-        public static final int tab4_layout=0x7f030010;
+        public static final int tabmain=0x7f030010;
         public static final int tabs_viewpager_layout=0x7f030011;
         public static final int web_view=0x7f030012;
     }
@@ -318,33 +300,12 @@ containing a value of this type.
         public static final int welcome=0x7f060015;
     }
     public static final class style {
-        /** 
-        Base application theme, dependent on API level. This theme is replaced
-        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
-    
-
-            Theme customizations available in newer API levels can go in
-            res/values-vXX/styles.xml, while customizations related to
-            backward-compatibility can go here.
-        
-
-        Base application theme for API 11+. This theme completely replaces
-        AppBaseTheme from res/values/styles.xml on API 11+ devices.
-    
- API 11 theme customizations can go here. 
-
-        Base application theme for API 14+. This theme completely replaces
-        AppBaseTheme from BOTH res/values/styles.xml and
-        res/values-v11/styles.xml on API 14+ devices.
-    
- API 14 theme customizations can go here. 
-         */
-        public static final int AppBaseTheme=0x7f090000;
-        /**  Application theme. 
- All customizations that are NOT specific to a particular API-level can go here. 
- <item name="android:background">@drawable/bg</item>
-         */
-        public static final int AppTheme=0x7f090001;
+        public static final int CustomTabWidget=0x7f090001;
+        public static final int CustomTabWidgetText=0x7f090002;
+        public static final int MyCustomTheme=0x7f090000;
+        public static final int Theme_Default=0x7f090003;
+        public static final int Theme_FullScreen=0x7f090005;
+        public static final int Theme_NoTitle=0x7f090004;
     }
     public static final class xml {
         public static final int preferences=0x7f040000;

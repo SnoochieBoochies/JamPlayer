@@ -1,4 +1,4 @@
-package com.niall.mohan.jamplayer.fragments;
+package com.niall.mohan.jamplayer.tabs;
 
 import com.niall.mohan.jamplayer.R;
 
@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-public class SoundcloudFragment extends Fragment {
+public class SoundcloudActivity extends Fragment {
 	/** (non-Javadoc)
 	 * @see android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)
 	 */

@@ -1,21 +1,18 @@
-# view res/layout/tabs_viewpager_layout.xml #generated:29
+# view res/layout/tabs_viewpager_layout.xml #generated:31
 -keep class android.support.v4.view.ViewPager { <init>(...); }
 
-# view res/layout/media_picker_activity.xml #generated:11
--keep class com.android.music.TouchInterceptor { <init>(...); }
-
-# view AndroidManifest.xml #generated:38
+# view AndroidManifest.xml #generated:39
 -keep class com.dropbox.client2.android.AuthActivity { <init>(...); }
 
-# view AndroidManifest.xml #generated:51
+# view AndroidManifest.xml #generated:52
 -keep class com.niall.mohan.jamplayer.JamService { <init>(...); }
 
-# view AndroidManifest.xml #generated:25
--keep class com.niall.mohan.jamplayer.MainActivity { <init>(...); }
-
-# view AndroidManifest.xml #generated:65
+# view AndroidManifest.xml #generated:66
 -keep class com.niall.mohan.jamplayer.PlaybackIntentReceiver { <init>(...); }
 
-# view AndroidManifest.xml #generated:34
+# view AndroidManifest.xml #generated:35
 -keep class com.niall.mohan.jamplayer.SettingsActivity { <init>(...); }
+
+# view AndroidManifest.xml #generated:26
+-keep class com.niall.mohan.jamplayer.tabs.TabsActivity { <init>(...); }
 

@@ -8,13 +8,13 @@ public class JamSongs  {
 	public String duration; // media duration
 	public String artist; // media artist
 	public String display_name;
-	public int cloud;
+	public String service;
 	
-	public JamSongs(String title, String path, int cloud, String album,String duration, String artist,
+	public JamSongs(String title, String path, String service, String album,String duration, String artist,
 			String display_name) {
 		this.title = title;
 		this.path = path;
-		this.cloud = cloud;
+		this.service = service;
 		this.album = album;
 		this.artist = artist;
 		this.duration = duration;
@@ -38,8 +38,8 @@ public class JamSongs  {
 	public String getDuration() {
 		return duration;
 	}
-	public int getCloud() {
-		return cloud;
+	public String getService() {
+		return service;
 	}
 	public void setTitle(String title) {
 		this.title = title;
@@ -56,7 +56,7 @@ public class JamSongs  {
 	public void setDuration(String duration) {
 		this.duration = duration;
 	}
-	public void setCloud(int cloud) {
-		this.cloud = cloud;
+	public void setService(String service) {
+		this.service = service;
 	}
 }

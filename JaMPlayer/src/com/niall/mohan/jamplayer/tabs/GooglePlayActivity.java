@@ -1,4 +1,4 @@
-package com.niall.mohan.jamplayer.fragments;
+package com.niall.mohan.jamplayer.tabs;
 
 import com.niall.mohan.jamplayer.R;
 
@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-public class LocalFragment extends Fragment {
+public class GooglePlayActivity extends Fragment {
 	/** (non-Javadoc)
 	 * @see android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)
 	 */
@@ -26,6 +26,6 @@ public class LocalFragment extends Fragment {
             // the view hierarchy; it would just never be used.
             return null;
         }
-		return (RelativeLayout)inflater.inflate(R.layout.tab4_layout, container, false);
+		return (RelativeLayout)inflater.inflate(R.layout.google_tab_layout, container, false);
 	}
 }

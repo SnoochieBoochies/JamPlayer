@@ -1,4 +1,4 @@
-package com.niall.mohan.jamplayer.fragments;
+package com.niall.mohan.jamplayer.tabs;
 
 import com.niall.mohan.jamplayer.R;
 
@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-public class GooglePlayFragment extends Fragment {
+public class DropboxActivity extends Fragment {
 	/** (non-Javadoc)
 	 * @see android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)
 	 */
@@ -26,6 +26,6 @@ public class GooglePlayFragment extends Fragment {
             // the view hierarchy; it would just never be used.
             return null;
         }
-		return (RelativeLayout)inflater.inflate(R.layout.tab1_layout, container, false);
+		return (RelativeLayout)inflater.inflate(R.layout.tab3_layout, container, false);
 	}
 }

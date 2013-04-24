@@ -5,40 +5,62 @@ import java.util.List;
 
 import com.niall.mohan.jamplayer.adapters.JamSongs;
 
-import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.media.MediaMetadataRetriever;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.provider.MediaStore;
-import android.provider.MediaStore.Audio.Media;
 import android.util.Log;
-//TODO for cloud music,maybe mediametadataretreiver could be of use
+
 public class MusicTable {
 	public static final String TAG = "MediaSqlite";
 	private static final String DB_NAME = "jam_player.db";
-	private static final int DB_VERSION = 1;
+	private static final int DB_VERSION = 2;
+	public static final String TABLE_NAME = "medias";
+	public static final String _ID = "_id";
+	public static final String TITLE = "title";
+	public static final String ALBUM = "album";
+	public static final String ARTIST = "artist";
+	public static final String URI_PATH = "uri";
+	public static final String URL_PATH = "url";
+	public static final String DURATION = "duration";
+	public static final String ARTWORK_URI = "";
+	public static final String SERVICE_TYPE = "service";
 	private static MusicDbHelper dbHelper;
-	
+	private SQLiteDatabase db;
+	private final Context context;
 	public static String [] MEDIA_PROJECTION = new String [] {
 		MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION,
 		MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DISPLAY_NAME 
 	};
-	public static String [] CLOUD_MEDIA_PROJECTION = new String [] {
-		MusicDbHelper.ARTIST,MusicDbHelper.URI_PATH, MusicDbHelper.IS_CLOUD
-	};
-	public MusicTable() {
-		dbHelper = getInstance();
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		queryAll();
-		db.close();
-	}
+	public static String [] SELECTION = new String [] {
+		_ID, TITLE, ALBUM, ARTIST, URI_PATH, URL_PATH,
+		DURATION, SERVICE_TYPE};
+	//public MusicTable() {
+	//	dbHelper = getInstance();
+	//	SQLiteDatabase db = dbHelper.getWritableDatabase();
+	//	queryAll();
+	//	db.close();
+	//}
 	public MusicTable(Context context) {
+		this.context = context;
 		dbHelper = MusicDbHelper.getInstance(context);
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		queryAll();
-		db.close();
+		//SQLiteDatabase db = dbHelper.getWritableDatabase();
+		//queryAll();
+		//db.close();
+	}
+	public MusicTable open() throws SQLException {
+		dbHelper = new MusicDbHelper(context);
+		db = dbHelper.getWritableDatabase();
+		return this;
+	}
+	public void close() {
+		if(dbHelper != null) {
+			dbHelper.close();
+		}
 	}
 	public MusicDbHelper getInstance() {
 		if(dbHelper == null) {
@@ -48,7 +70,7 @@ public class MusicTable {
 	public void update(JamSongs info) {
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		ContentValues values = setInfo(info);
-		db.update(MusicDbHelper.TABLE_NAME, values, MusicDbHelper.PLAYLIST +" = ?", new String []{info.playlist});
+		db.update(TABLE_NAME, values, ARTIST +" = ?", new String []{info.playlist});
 		db.close();
 	}
 	public void insert(JamSongs info) {
@@ -64,21 +86,21 @@ public class MusicTable {
 		cursor.close();
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		ContentValues values = setInfo(info);
-		db.insert(MusicDbHelper.TABLE_NAME, null, values);
+		db.insert(TABLE_NAME, null, values);
 		db.close();
 	}
 
 	public List<JamSongs> queryAll() {
 		SQLiteDatabase database = dbHelper.getReadableDatabase();
 
-		Cursor cursor = database.query(MusicDbHelper.TABLE_NAME,
-				CLOUD_MEDIA_PROJECTION, null, null, null,
+		Cursor cursor = database.query(TABLE_NAME,
+				SELECTION, null, null, null,
 				null, null);
 
 		List<JamSongs> medias = new ArrayList<JamSongs>();
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
-			JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),cursor.getInt(2),null,null,null, null);
+			JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),cursor.getString(2),null,null,null, null);
 			medias.add(mediaInfo);
 			//Log.i("LIST: ", String.valueOf(medias.get(i)._cloud));
 			cursor.moveToNext();
@@ -91,7 +113,7 @@ public class MusicTable {
 	public List<String> query(String[] projection) {
 		SQLiteDatabase database = dbHelper.getReadableDatabase();
 		ArrayList<String> playlists = new ArrayList<String>();
-		Cursor cursor = database.query(MusicDbHelper.TABLE_NAME,
+		Cursor cursor = database.query(TABLE_NAME,
 				projection, null, null, null, null, null);
 		if (cursor == null)
 			return null;
@@ -112,27 +134,24 @@ public class MusicTable {
 		String clause;
 		switch (cmd) {
 		case 0:
-			clause = MusicDbHelper.PLAYLIST;
+			clause = TITLE;
 			break;
 		case 1:
-			clause = MusicDbHelper.TITLE;
+			clause = ALBUM;
 			break;
 		case 2:
-			clause = MusicDbHelper.ALBUM;
+			clause = ARTIST;
 			break;
 		case 3:
-			clause = MusicDbHelper.ARTIST;
+			clause = URI_PATH;
 			break;
 		case 4:
-			clause = MusicDbHelper.URI_PATH;
-			break;
-		case 5:
-			clause = MusicDbHelper.URL_PATH;
+			clause = URL_PATH;
 			break;
 		default:
 			return null;
 		}
-		Cursor cursor = database.query(MusicDbHelper.TABLE_NAME, null,
+		Cursor cursor = database.query(TABLE_NAME, null,
 				clause + "= ?", new String[] { value }, null, null, null);
 		// database.close();
 		return cursor;
@@ -142,50 +161,92 @@ public class MusicTable {
 		String clause;
 		switch (cmd) {
 		case 0:
-			clause = MusicDbHelper.PLAYLIST;
+			clause = TITLE;
 			break;
 		case 1:
-			clause = MusicDbHelper.TITLE;
+			clause = ALBUM;
 			break;
 		case 2:
-			clause = MusicDbHelper.ALBUM;
-			break;
-		case 3:
-			clause = MusicDbHelper.ARTIST;
+			clause = ARTIST;
 		default:
 			return;
 		}
-		database.delete(MusicDbHelper.TABLE_NAME, clause + " = ?",
+		database.delete(TABLE_NAME, clause + " = ?",
 				new String[] { name });
 		database.close();
 	}
 	private ContentValues setInfo(JamSongs mediaInfo) {
 		ContentValues values = new ContentValues();
-		values.put(MusicDbHelper.TITLE, mediaInfo.title);
-		values.put(MusicDbHelper.ARTIST, mediaInfo.artist);
-		values.put(MusicDbHelper.ALBUM, mediaInfo.album);
-		values.put(MusicDbHelper.ARTIST, mediaInfo.artist);
-		values.put(MusicDbHelper.DURATION, mediaInfo.duration);
-		values.put(MusicDbHelper.URI_PATH, mediaInfo.path);
-		values.put(MusicDbHelper.IS_CLOUD, mediaInfo.cloud);
+		values.put(TITLE, mediaInfo.getTitle());
+		values.put(ARTIST, mediaInfo.getArtist());
+		values.put(ALBUM, mediaInfo.getAlbum());
+		values.put(DURATION, mediaInfo.getDuration());
+		values.put(URI_PATH, mediaInfo.getPath());
+		values.put(SERVICE_TYPE, mediaInfo.getService());
 		//values.put(MusicDbHelper.PLAYLIST, mediaInfo._playlist);
 		return values;
 	}
 
-	private List<JamSongs> getMediaInfo(Cursor cursor) {
-		if (cursor == null || cursor.getCount() == 0) {
-			return null;
+	
+	public Cursor getSongsByService(String service) {
+		Log.w(TAG, service);
+		Cursor mCursor = null;
+		if(service == null || service.length() == 0) {
+			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
+				     null, null, null, null, null);
+		} else {
+			mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[7] + " like '%"+ service+"%'", null, null, null,null,null);
 		}
-		List<JamSongs> medias = new ArrayList<JamSongs>();
-		cursor.moveToFirst();
-		for (int i = 0; i < cursor.getCount(); i++) {
-
-			JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),0,cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5));
-			medias.add(mediaInfo);
-			cursor.moveToNext();
+		if(mCursor != null) {
+			mCursor.moveToFirst();
 		}
-		cursor.close();
-		return medias;
+		return mCursor;
 	}
+	private static class MusicDbHelper extends SQLiteOpenHelper {
+		/*
+		private static final String DB_NAME = "jam_player.db";
+		private static final String TAG = "MusicDbHelper";
+		private static final int DB_VERSION = 2;
+		public static final String TABLE_NAME = "medias";
+		public static final String _ID = "_id";
+		public static final String TITLE = "title";
+		public static final String ALBUM = "album";
+		public static final String ARTIST = "artist";
+		public static final String URI_PATH = "uri";
+		public static final String URL_PATH = "url";
+		public static final String DURATION = "duration";
+		public static final String ARTWORK_URI = "";
+		public static final String SERVICE_TYPE = "service";
+		*/
+		private Context context;
+		private static MusicDbHelper mInstance;
+		public static MusicDbHelper getInstance(Context context) {
+			if(mInstance ==null)
+				mInstance = new MusicDbHelper(context);
+			return mInstance;
+		}
+		public MusicDbHelper(Context context) {
+			super(context, DB_NAME, null, DB_VERSION);
+			this.context = context;
+		}
+		
+		public MusicDbHelper(Context context, String name, CursorFactory factory, int version) {
+			super(context, name, factory, version);
+		}
+		
+		@Override
+		public void onCreate(SQLiteDatabase db) {
+			Log.i(TAG,"onCreate()");	
+			db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" + _ID + " INTEGER PRIMARY KEY, " +
+					 TITLE + " VARCHAR," + URI_PATH + " VARCHAR,"+ URL_PATH + " VARCHAR,"+ ALBUM + " VARCHAR," +  DURATION + " VARCHAR," + ARTIST + " VARCHAR," 
+					+ SERVICE_TYPE +" VARCHAR)");
+		}
+		//I've made this onUpgrade so simple as columns won't really be added/removed very often at all.
+		@Override
+		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+			onCreate(db);
+		}
 
+	}
 }

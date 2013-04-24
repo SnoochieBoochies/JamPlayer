@@ -1,7 +1,13 @@
 package com.niall.mohan.jamplayer;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,6 +24,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+
+import javazoom.jl.decoder.Bitstream;
+import javazoom.jl.decoder.BitstreamException;
+import javazoom.jl.decoder.Decoder;
+import javazoom.jl.decoder.DecoderException;
+import javazoom.jl.decoder.SampleBuffer;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -54,13 +66,18 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.TextUtils;
+import android.text.InputFilter.LengthFilter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -81,6 +98,7 @@ import com.android.gm.api.model.QueryResults;
 import com.android.gm.api.model.Song;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.DeltaEntry.JsonExtractor;
+import com.dropbox.client2.DropboxAPI.DropboxFileInfo;
 import com.dropbox.client2.DropboxAPI.DropboxLink;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
@@ -107,8 +125,8 @@ import com.gracenote.mmid.MobileSDK.GNSearchResultReady;
 import com.gracenote.mmid.MobileSDK.GNStatus;
 import com.niall.mohan.jamplayer.adapters.GPlaySongAdapter;
 import com.niall.mohan.jamplayer.adapters.JamSongs;
-import com.niall.mohan.jamplayer.fragments.SoundcloudFragment;
-import com.niall.mohan.jamplayer.fragments.TabsActivity;
+import com.niall.mohan.jamplayer.tabs.SoundcloudActivity;
+import com.niall.mohan.jamplayer.tabs.TabsActivity;
 import com.soundcloud.api.ApiWrapper;
 import com.soundcloud.api.Endpoints;
 import com.soundcloud.api.Request;
@@ -126,6 +144,7 @@ import de.umass.lastfm.User;
  * Setup for the settings page. Settings page will have the cloud services login bits
  */
 public class SettingsActivity extends AccountAuthenticatorActivity {
+	WriteToCache newFolder;
 	GNConfig config;
     private static final String TAG = "SettingsActivity";
 	Button connectGplay;
@@ -149,7 +168,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     private boolean mLoggedIn;
 	public DropboxAPI<AndroidAuthSession> mApi;
     SharedPreferences preferences;
-	public GPlay gplay;
 	GoogleMusicApi api;
 	MusicTable tb;
 	Token sCloudtoken;
@@ -187,7 +205,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	        	        	GoogleMusicLoginTask login = new GoogleMusicLoginTask(SettingsActivity.this) {
 	        	        		@Override
 	        	        		protected void onPostExecute(Boolean success) {
-	        	        			Toast.makeText(SettingsActivity.this, String.valueOf(success), Toast.LENGTH_LONG).show();
 	        	        			Log.i(TAG,"songs size"+gPlayList.size());
 	        	        			//now we have all of the songs in the list. push to the DB, but first construct the urls.
 	        	        			if(success) {
@@ -293,8 +310,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 								writer.commit();
 								writer.putString("SCloud_Scope", sCloudtoken.scope);
 								writer.commit();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
+							} catch (IOException e) { 	
 								e.printStackTrace();
 							}
 			                Log.i(TAG,error+" "+code);
@@ -392,6 +408,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 		progress = (ProgressBar) findViewById(R.id.progress);
 		AndroidAuthSession session = buildSession();
         mApi = new DropboxAPI<AndroidAuthSession>(session);
+        newFolder = new WriteToCache();
 		connectGplay.setOnClickListener(new OnClickListener() {
 			//need to check after auth() is the database already occupied and are there any changes.
 			@Override
@@ -541,27 +558,49 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	            String [] formats = {".mp3",".flac",".ogg",".wav"}; //supported formats of the MEdiaPlayer
 	            TextSearchTask graceNoteSearch;
 	            for(int i = 0; i < formats.length; i++)
-	            files.addAll((ArrayList<Entry>) mApi.search("/", formats[i], 100, false));
+	            	files.addAll((ArrayList<Entry>) mApi.search("/", formats[i], 100, false));
 				
 	            for(Entry e : files) {
 	            	DropboxLink url = mApi.media(e.path, false);
+	            	Log.i(TAG,url.url);
 	                graceNoteSearch = new TextSearchTask();
 	                graceNoteSearch.config = config;
 	                //graceNoteSearch.execute(url.url);
 	                //GNOperations.searchByText(graceNoteSearch, config, e.fileName(), e.fileName(), e.fileName());
 	                //graceNoteSearch.textSearch(e.fileName(), e.fileName(), e.fileName(), url.url);
-	                Log.i(TAG, e.fileName());
+	                Log.i(TAG, e.path);
+	                
 
 	            }
+	            File f = newFolder.getAlbumStorageDir();
+	            File [] fa = f.listFiles();
+	            Log.i(TAG,fa[0].getAbsolutePath()+fa[1].getAbsolutePath());
+	            //FileOutputStream os = new FileOutputStream(f.getAbsolutePath()+"/Intronaut - Valley of Smoke - Above.mp3");
+	            //DropboxFileInfo info = mApi.getFile("/Intronaut - Valley of Smoke - Above.mp3", null, os, null);
+	            //http://dl.dropbox.com/1/view/4gi2cufj2w3lzjm/Apps/JaM/Intronaut%20-%20Valley%20of%20Smoke%20-%20Above.mp3
 	            //get songs from textsearch now that the mediaInfo object is constructed with all the info we need.
 	            Log.i(TAG+"SONGS",String.valueOf(dropboxSongs.size()));
+	            RecognizePCMStreamTask task = new RecognizePCMStreamTask();
+	            task.mconfig = config;
+	            try {
+					task.recognizePCMStream();
+				} catch (BitstreamException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (DecoderException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 	            success = true;
+	            File a = SettingsActivity.this.getFilesDir();
+	            String [] t =a.list();
+	            Log.i(TAG, t[0]);
 			} catch (DropboxException e2) {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
-			} catch (Exception e1) {
+			} catch (IOException e1) {
 				// TODO Auto-generated catch block
-	 			e1.printStackTrace();
+				e1.printStackTrace();
 			} 
 			return success;
 		}
@@ -611,7 +650,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 					d = new JamSongs[finalResult.length()];
 					for(int i = 0; i <d.length;i++) {
 						JSONObject f = finalResult.getJSONObject(i);
-						d[i] = new JamSongs(f.getString("title"),f.getString("stream_url"),1,f.getString("label_name"),f.getString("duration"),
+						d[i] = new JamSongs(f.getString("title"),f.getString("stream_url"),"soundcloud",f.getString("label_name"),f.getString("duration"),
 								f.getString("label_name"),f.getString("title"));
 						Log.i(TAG,d[i].title);
 						//Log.i(TAG,d[i]);
@@ -712,13 +751,13 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     			updateStatus(msg, false); // Display error while leaving the
     			// prior status update
     		} else {
-    			if (result.isFingerprintSearchNoMatchStatus()) {
+    			if (result.isTextSearchNoMatchStatus()) {
     				// Handle special case of webservices lookup with no match
     				Log.i("TABS","no result");
     			} else {
     				// Text search can return 0 to N responses
     				GNSearchResponse resp = result.getBestResponse();
-    				JamSongs song = new JamSongs(resp.getTrackTitle(), songUrl, 1, resp.getAlbumTitle(), null, resp.getArtist(), resp.getTrackTitle());
+    				JamSongs song = new JamSongs(resp.getTrackTitle(), songUrl, "dropbox", resp.getAlbumTitle(), null, resp.getArtist(), resp.getTrackTitle());
     				SettingsActivity.dropboxSongs.add(song);
     				pushToDb(song);
     				Log.i("SONGS",String.valueOf(SettingsActivity.dropboxSongs.size()));
@@ -735,4 +774,173 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     		}
     	}
     }
+    public class RecognizePCMStreamTask implements GNSearchResultReady,
+	GNOperationStatusChanged {
+    	GNConfig mconfig;
+    	private GNSampleBuffer loadSamplePCM() throws IOException, BitstreamException, DecoderException {
+			int channel = 1;
+			int sampleRate = 8000;
+			int length = (int) (channel * sampleRate * 2 * 6.5);
+			/*
+			HttpURLConnection con;
+    		URL url2 = new URL("http://redbrick.dcu.ie/~chalk/01%20...Baby%20One%20More%20Time.mp3");
+    		con = (HttpURLConnection) url2.openConnection();
+    		con.setRequestProperty("Range", "bytes=1040000");
+    		con.connect();
+    		InputStream is = con.getInputStream();
+    		File file = new File(SettingsActivity.this.getFilesDir(),"pcm.mp3");
+    		Log.i(TAG,file.getAbsolutePath());
+    		BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(file.getAbsolutePath()));
+    		byte [] pcmBuffer = new byte[1040000];
+    		int i =0;
+    		while((i = is.read(pcmBuffer,0,pcmBuffer.length)) != -1)
+    			os.write(pcmBuffer, 0,i);
+    		os.flush();
+    		os.close();
+    		byte [] pcmBuffer2 = new byte[1040000];
+    		FileInputStream is2 = new FileInputStream(file);
+    		*/
+
+			FileInputStream is2 = new FileInputStream("mnt/sdcard/Music/JaM Music/01 ...Baby One More Time.mp3");
+			Bitstream bits = new Bitstream(is2);
+			Decoder decode = new Decoder();
+
+			//SampleBuffer output = (SampleBuffer) decode.decodeFrame(frameHeader, bitstream);
+			//byte[] array = MyShortToByte(output.getBuffer());
+			//at.write(array,  0,  array.length);
+			File pcm = new File(SettingsActivity.this.getFilesDir(),"pcm.pcm");
+			FileOutputStream os = new FileOutputStream(pcm);
+			boolean done = false;
+			byte[] array = new byte[1040000];
+			InputStream data = new FileInputStream("mnt/sdcard/Music/JaM Music/01 ...Baby One More Time.mp3");
+			Bitstream bitstream = new Bitstream(data);
+			Decoder decoder = new Decoder();
+			array = decode(is2,0,16740);
+			//while(!done) {
+			//  javazoom.jl.decoder.Header frameHeader = bitstream.readFrame();
+			//  if(frameHeader == null)
+			//	  done = true;
+			 // SampleBuffer buffer = (SampleBuffer) decoder.decodeFrame(frameHeader, bitstream);
+			 // short [] buff = buffer.getBuffer();
+
+			 
+
+			  //bitstream.closeFrame();
+		//	}
+			os.close();
+			//FileInputStream pcmIS = new FileInputStream(pcm);
+    		//try {
+			//	DataInputStream dataIn = new DataInputStream(pcmIS);
+			//	dataIn.read(pcmBuffer2, 0, pcmBuffer2.length);
+			//	dataIn.close();
+			//} catch (IOException e) {
+			//	pcmBuffer2 = null;
+			//}
+			
+			return new GNSampleBuffer(array, channel, sampleRate);
+		}
+    	public byte[] decode(FileInputStream inputStream, int startMs, int maxMs) 
+    			throws IOException, DecoderException {
+    			ByteArrayOutputStream outStream = new ByteArrayOutputStream(1024);
+    			
+    			float totalMs = 0;
+    			boolean seeking = true;
+    			
+    			try {
+    				Bitstream bitstream = new Bitstream(inputStream);
+    				Decoder decoder = new Decoder();
+    				
+    				boolean done = false;
+    				while (! done) {
+    					javazoom.jl.decoder.Header frameHeader = bitstream.readFrame();
+    					if (frameHeader == null) {
+    						done = true;
+    					} else {
+    						totalMs += frameHeader.ms_per_frame();
+
+    						if (totalMs >= startMs) {
+    							seeking = false;
+    						}
+    						
+    						if (! seeking) {
+    							SampleBuffer output = (SampleBuffer) decoder.decodeFrame(frameHeader, bitstream);
+    							
+    							if (output.getSampleFrequency() != 44100
+    									|| output.getChannelCount() != 2) {
+    								throw new javazoom.jl.decoder.DecoderException("mono or non-44100 MP3 not supported", null);
+    							}
+    							
+    							short[] pcm = output.getBuffer();
+    							for (short s : pcm) {
+    								outStream.write(s & 0xff);
+    								outStream.write((s >> 8 ) & 0xff);
+    							}
+    						}
+    						
+    						if (totalMs >= (startMs + maxMs)) {
+    							done = true;
+    						}
+    					}
+    					bitstream.closeFrame();
+    				}
+    				
+    				return outStream.toByteArray();
+    			} catch (BitstreamException e) {
+    				throw new IOException("Bitstream error: " + e);
+    			} catch (DecoderException e) {
+    				Log.w(TAG, "Decoder error", e);
+    				throw new DecoderException(maxMs, e);
+    			} 
+    		}
+
+		public void recognizePCMStream() throws IOException, BitstreamException, DecoderException {
+			GNSampleBuffer samplePCMBuffer = loadSamplePCM();
+
+			GNOperations.recognizeMIDStreamFromPcm(this, mconfig,
+					samplePCMBuffer);
+		}
+
+/**
+ * When the fingeprint/lookup operation is finished, this method will be
+ * invoked in the UI thread to report results.
+ */
+
+		public void GNResultReady(GNSearchResult result) {
+			if (result.isFailure()) {
+		// 	An error occurred so display the error to the user.
+				String msg = String.format("[%d] %s", result.getErrCode(),
+				result.getErrMessage());
+				updateStatus(msg, false); // Display error while leaving the
+		// 	prior status update
+			} else {
+				if (result.isFingerprintSearchNoMatchStatus()) {
+			// Handle special case of webservices lookup with no match
+					Log.i("EWRGON","NONE");
+				} else {
+					//GNSearchResponse bestResponse = result.getBestResponse();
+					GNSearchResponse [] resp = result.getResponses();
+					for(GNSearchResponse s : resp) {
+						Log.i("RESPONsssssE",s.getArtist());	
+					}
+				}
+				updateStatus("Success", true);
+	}
+
+}
+
+/**
+ * Intermediate status update from the fingerprinter
+ */
+
+		public void GNStatusChanged(GNStatus status) {
+			updateStatus(status.getMessage(), true);
+		}
+    	private void updateStatus(String status, boolean clearStatus) {
+    		if (clearStatus) {
+    			Log.i("TAB", status);
+    		} else {
+    			Log.i("TAB", status + status);
+    		}
+    	}
+	}
 }
