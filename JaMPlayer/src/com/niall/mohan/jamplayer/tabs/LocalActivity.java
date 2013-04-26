@@ -1,12 +1,19 @@
 package com.niall.mohan.jamplayer.tabs;
 
+import com.google.android.gms.internal.ar;
 import com.niall.mohan.jamplayer.JamService;
-import com.niall.mohan.jamplayer.MediaAdapter;
 import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
 
+import android.app.Activity;
+import android.app.ExpandableListActivity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.media.AudioManager;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,45 +23,112 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.SimpleCursorTreeAdapter;
+import android.widget.Toast;
 
-public class LocalActivity extends Fragment implements  OnItemClickListener {
-	/** (non-Javadoc)
-	 * @see android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)
-	 */
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-		if (container == null) {
-            return null;
-        }
-		View v = inflater.inflate(R.id.local_list_song, container, false);
-		return (RelativeLayout)inflater.inflate(R.layout.local_tab_layout, container, false);
-	}
-	public static String TAG = "LocalFragment";
-	private ListView list_song;
-	private ExpandableListView exp_list_artists;
-	public static BaseAdapter displayAdapter;
-	public static ExpandableListAdapter exp_list_adapter;
-
+public class LocalActivity extends ExpandableListActivity implements  OnItemClickListener {
+	public ExpandableListView list_view;
+	private static String TAG = "LocalActivity";
+	private ArtistAlbumListAdapter adapter;
+	private String currentArtist;
+	private String currentArtistId;
+	private String currentAlbum;
+	private String currentAlbumId;
+	private String currentSong;
+	private Cursor artistCursor;
+	private static int lastListPos = -1;
+	private static int lastListPosFine = -1;
+	public MusicTable db;
+	//setup. Get last selected artist/album combo.
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
+		startService(new Intent(this,JamService.class));
 		super.onCreate(savedInstanceState);
-		//displayAdapter = new MediaAdapter(this.getActivity());
-		//list_song = (ListView) this.getActivity().findViewById(R.id.local_list_song);
-		//list_song.setAdapter(displayAdapter);
-		//list_song.setOnItemClickListener(this);
-		
-		exp_list_adapter = new ExpandableListAdapter(this.getActivity());
-		exp_list_artists = (ExpandableListView) this.getActivity().findViewById(R.id.local_list_album);
-		//exp_list_artists.setAdapter(exp_list_adapter);
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		if(savedInstanceState != null) {
+			currentArtist = savedInstanceState.getString("selectedartist");
+			currentArtistId = savedInstanceState.getString("selectedartistid");
+			currentAlbum = savedInstanceState.getString("currentalbum");
+			currentAlbumId = savedInstanceState.getString("selectedalbumid");
+			currentSong = savedInstanceState.getString("currentsong");
+
+		}
+		setContentView(R.layout.local_tab_layout);
+		//list_view = (ExpandableListView) findViewById(R.id.local_list_artist);
+
+		db = new MusicTable(this);
+		db.open();
+		fillData();
 	}
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		outState.putString("selectedartist", currentArtist);
+		outState.putString("selectedartistid", currentArtistId);
+		outState.putString("selectedalbum", currentAlbum);
+		outState.putString("selectedalbumid", currentAlbumId);
+		outState.putString("selectedsong", currentSong);
+		super.onSaveInstanceState(outState);
+	}
+	@Override
+	protected void onResume() {
+		fillData();
+		super.onResume();
+	}
+	@Override
+	protected void onDestroy() {
+		db.close();
+		super.onDestroy();
+	}
+	
 
 	@Override
 	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-		Log.i(TAG, "item clicked");
-		this.getActivity().startService(new Intent(JamService.ACTION_PLAY));
+		Log.i(TAG, "onItemClick()");
+	}
+	int mGroupIdColumnIndex;
+	void fillData() {
+		Log.i(TAG, "fillData()");
+		artistCursor = db.getArtistsByService("local");
+		startManagingCursor(artistCursor);
+		//Log.i(TAG, artistCursor.getColumnName(2));
+		//artistCursor.moveToFirst();
+		//mGroupIdColumnIndex = artistCursor.getColumnIndexOrThrow(MusicTable.ARTIST);
+		//artistCursor = db.query("artist", 2, "local");
+		adapter = new ArtistAlbumListAdapter(artistCursor, this,
+				android.R.layout.simple_expandable_list_item_1,android.R.layout.simple_expandable_list_item_1, 
+				new String [] {MusicTable.ARTIST}, new int [] {android.R.id.text1}, new String [] {MusicTable.ALBUM}, new int [] {android.R.id.text1});
+		setListAdapter(adapter);
+	}
+	public class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
+
+		public ArtistAlbumListAdapter(Cursor cursor, Context context,
+                int groupLayout, int childLayout, String[] groupFrom,
+                int[] groupTo, String[] childrenFrom, int[] childrenTo) {
+			super(context, cursor, groupLayout, groupFrom, groupTo,
+                        childLayout, childrenFrom, childrenTo);
+		}
+
+
+
+		@Override
+		protected Cursor getChildrenCursor(Cursor groupCursor) {
+			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
+			LocalActivity.this.startManagingCursor(albumCursor);
+			//albumCursor.moveToFirst();
+			return albumCursor;
+		}
+		@Override
+		public View getChildView(int groupPosition, int childPosition,
+				boolean isLastChild, View convertView, ViewGroup parent) {
+			Log.i(TAG,"childview");
+			return super.getChildView(groupPosition, childPosition, isLastChild,
+					convertView, parent);
+		}
+
 	}
 	
 	

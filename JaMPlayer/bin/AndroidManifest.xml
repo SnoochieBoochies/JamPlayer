@@ -36,6 +36,11 @@
             android:name="com.niall.mohan.jamplayer.SettingsActivity"
             android:label="@string/app_name">
         </activity>
+        <activity 
+            android:name="com.niall.mohan.jamplayer.tabs.LocalActivity"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.DropboxActivity"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity"></activity>
 		 <activity
       android:name="com.dropbox.client2.android.AuthActivity"
       android:launchMode="singleTask"

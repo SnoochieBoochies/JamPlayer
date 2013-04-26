@@ -28,7 +28,7 @@
 -->
 <resources>
 
-    <style name="MyCustomTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <style name="MyCustomTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:tabWidgetStyle">@style/CustomTabWidget</item>
     </style>
 

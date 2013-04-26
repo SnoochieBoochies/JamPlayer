@@ -41,15 +41,13 @@ public class MediaUtils {
 	public static final String Data_Local = "Local";
 
 	public String Data_TYPE = Data_Local;
-	private static IJamService sService;
+
 
 	private static final Uri sArtworkUri = Uri
 			.parse("content://media/external/audio/albumart");
 	private static final BitmapFactory.Options sBitmapOptions = new BitmapFactory.Options();
 	private static Bitmap mCachedBit = null;
 
-	// sConnectionMap contains all binded MediaPlaybackService
-	private static HashMap<Context, ServiceBinder> sConnectionMap = new HashMap<Context, ServiceBinder>();
 
 	// all medias which will be binded with MediaAdapter
 	private static ArrayList<JamSongs> medias = new ArrayList<JamSongs>();
@@ -63,112 +61,8 @@ public class MediaUtils {
 		return mediaUtils;
 	}
 
-	public static class ServiceToken {
-		ContextWrapper mWrappedContext;
 
-		ServiceToken(ContextWrapper context) {
-			mWrappedContext = context;
-		}
-	}
 
-	public static ServiceToken bindToService(Activity context,
-			ServiceConnection callback) {
-		Activity realActivity = context.getParent();
-		if (realActivity == null) {
-			realActivity = context;
-		}
-		ContextWrapper cw = new ContextWrapper(realActivity);
-		ServiceBinder sb = new ServiceBinder(callback);
-		if (cw.bindService((new Intent()).setClass(cw,
-				JamService.class), sb, Context.BIND_AUTO_CREATE)) {
-			sConnectionMap.put(cw, sb);
-			Log.i("test", "sConnectionMap size is " + sConnectionMap.size());
-			return new ServiceToken(cw);
-		}
-		Log.e("Music", "Failed to bind to service");
-		return null;
-	}
-
-	public static void unbindFromService(ServiceToken token) {
-		if (token == null) {
-			Log.e("MusicUtils", "Trying to unbind with null token");
-			return;
-		}
-		ContextWrapper cw = token.mWrappedContext;
-		ServiceBinder sb = sConnectionMap.remove(cw);
-		if (sb == null) {
-			Log.e("MusicUtils", "Trying to unbind for unknown Context");
-			return;
-		}
-		cw.unbindService(sb);
-		if (sConnectionMap.isEmpty()) {
-			// presumably there is nobody interested in the service at this
-			// point,
-			// so don't hang on to the ServiceConnection
-			sService = null;
-		}
-		Log.i("test", "sConnectionMap size is " + sConnectionMap.size());
-	}
-
-	private static class ServiceBinder implements ServiceConnection {
-
-		ServiceConnection mCallback;
-
-		ServiceBinder(ServiceConnection callback) {
-			mCallback = callback;
-		}
-
-		public void onServiceConnected(ComponentName className,
-				android.os.IBinder service) {
-			sService = IJamService.Stub.asInterface(service);
-			if (mCallback != null) {
-				mCallback.onServiceConnected(className, service);
-			}
-		}
-
-		public void onServiceDisconnected(ComponentName className) {
-			if (mCallback != null) {
-				mCallback.onServiceDisconnected(className);
-			}
-			sService = null;
-		}
-	}
-
-	public void play(int position) {
-
-		try {
-			sService.play(position);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	public void next() {
-		try {
-			sService.next();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void prev() {
-		try {
-			sService.prev();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public long duration() {
-		if (sService != null) {
-			try {
-				return sService.duration();
-			} catch (RemoteException ex) {
-			}
-		}
-		return -1;
-	}
 
 	public static void scanSdCard(Context context, int cmd) {
 		Intent intent = new Intent(Intent.ACTION_MEDIA_MOUNTED, Uri
@@ -242,62 +136,6 @@ public class MediaUtils {
 		unduplicate(fathers);
 		return fathers;
 	}
-
-
-	public void setShuffleMode() {
-
-		if (sService == null) {
-			Log.i(MediaUtilsTag, "sService is dead");
-			return;
-		}
-
-		try {
-			sService.setShuffleMode();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void setRepeatMode() {
-		if (sService == null) {
-			Log.i(MediaUtilsTag, "sService is dead");
-			return;
-		}
-		try {
-			sService.setRepeatMode();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public int getRepeatMode() {
-		if (sService == null) {
-			Log.i(MediaUtilsTag, "sService is dead");
-			return -1;
-		}
-		int repeat_mode = 0;
-		try {
-			repeat_mode = sService.getRepeatMode();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-		return repeat_mode;
-	}
-
-	public int getShuffleMode() {
-		if (sService == null) {
-			Log.i(MediaUtilsTag, "sService is dead");
-			return -1;
-		}
-		int shuffle_mode = 0;
-		try {
-			shuffle_mode = sService.getShuffleMode();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		}
-		return shuffle_mode;
-	}
-
 
 
 	public static void unduplicate(List<String> list) {

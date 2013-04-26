@@ -18,7 +18,7 @@ import android.util.Log;
 public class MusicTable {
 	public static final String TAG = "MediaSqlite";
 	private static final String DB_NAME = "jam_player.db";
-	private static final int DB_VERSION = 2;
+	private static final int DB_VERSION = 4;
 	public static final String TABLE_NAME = "medias";
 	public static final String _ID = "_id";
 	public static final String TITLE = "title";
@@ -34,7 +34,7 @@ public class MusicTable {
 	private final Context context;
 	public static String [] MEDIA_PROJECTION = new String [] {
 		MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION,
-		MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DISPLAY_NAME 
+		MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DISPLAY_NAME
 	};
 	public static String [] SELECTION = new String [] {
 		_ID, TITLE, ALBUM, ARTIST, URI_PATH, URL_PATH,
@@ -48,9 +48,9 @@ public class MusicTable {
 	public MusicTable(Context context) {
 		this.context = context;
 		dbHelper = MusicDbHelper.getInstance(context);
-		//SQLiteDatabase db = dbHelper.getWritableDatabase();
-		//queryAll();
-		//db.close();
+		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		queryAll();
+		db.close();
 	}
 	public MusicTable open() throws SQLException {
 		dbHelper = new MusicDbHelper(context);
@@ -67,16 +67,11 @@ public class MusicTable {
 			return dbHelper = new MusicDbHelper(null);
 		} else return dbHelper;
 	}
-	public void update(JamSongs info) {
-		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		ContentValues values = setInfo(info);
-		db.update(TABLE_NAME, values, ARTIST +" = ?", new String []{info.playlist});
-		db.close();
-	}
+
 	public void insert(JamSongs info) {
 		//Log.i(TAG,info._title);
-		Cursor cursor = query(info.getTitle(), 1);
-		Log.i("INFO", info.title);
+		Cursor cursor = query(info.getTitle(), 1,"local");
+		//Log.i("INFO", info.title);
 		if(cursor.getCount() != 0) {
 			cursor.close();
 			Log.i(TAG,"cursor is not empty " + cursor.getCount());
@@ -100,7 +95,7 @@ public class MusicTable {
 		List<JamSongs> medias = new ArrayList<JamSongs>();
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
-			JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),cursor.getString(2),null,null,null, null);
+			JamSongs mediaInfo = new JamSongs(cursor.getString(1), cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5),cursor.getString(6), null);
 			medias.add(mediaInfo);
 			//Log.i("LIST: ", String.valueOf(medias.get(i)._cloud));
 			cursor.moveToNext();
@@ -129,7 +124,7 @@ public class MusicTable {
 		MediaUtils.unduplicate(playlists);
 		return playlists;
 	}
-	public Cursor query(String value, int cmd) {
+	public Cursor query(String value, int cmd, String service) {
 		SQLiteDatabase database = dbHelper.getReadableDatabase();
 		String clause;
 		switch (cmd) {
@@ -152,7 +147,7 @@ public class MusicTable {
 			return null;
 		}
 		Cursor cursor = database.query(TABLE_NAME, null,
-				clause + "= ?", new String[] { value }, null, null, null);
+				clause + "= ?"+ " AND "+SELECTION[7]+" like '%"+service+"%'", new String[] { value }, null, null, null);
 		// database.close();
 		return cursor;
 	}
@@ -202,22 +197,55 @@ public class MusicTable {
 		}
 		return mCursor;
 	}
+	public Cursor getArtistsByService(String service) {
+		db = dbHelper.getReadableDatabase();
+		Log.w(TAG,"service = "+service);
+		Cursor mCursor = null;
+		if(service == null || service.length() == 0) {
+			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
+				     null, null, null, null, null);
+		} else {
+			//just try and implement the adapter like in the ExpandAdapter.
+			//mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[7]+ " like '%"+ service+"%'", null, null, null,null,null);
+			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7]+ " like '%"+service+"%'",null, null, null, null,null);
+			mCursor = db.query(true, TABLE_NAME, new String [] {_ID, ARTIST,ALBUM}, SELECTION[7]+ " like '%"+service+"%'", null, SELECTION[3], null, null, null);
+			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7] + " = ?",null, null, null, null,null);
+			//mCursor = db.rawQuery("SELECT _id,artist,album,title FROM "+TABLE_NAME+" WHERE service = '%"+service+"%'", null);
+		}
+		if(mCursor != null) {
+			Log.i(TAG, "not null");
+			mCursor.moveToFirst();
+			final int count = mCursor.getCount();
+			Log.i(TAG, String.valueOf(count));
+		}
+		return mCursor;
+	}
+	public Cursor getArtistsAlbumsByService(String artist) {
+		db = dbHelper.getReadableDatabase();
+		List<String> albums = new ArrayList<String>();
+		Cursor mCursor = null;
+		if(artist == null || artist.length() == 0) {
+			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
+				     null, null, null, null, null);
+		} else {
+			mCursor = db.query(false, TABLE_NAME, new String [] {_ID,ARTIST,ALBUM}, SELECTION[3] + " like '%"+artist+"%'", null, SELECTION[2], null, null, null);
+			//mCursor = db.rawQuery("SELECT * FROM , selectionArgs)
+		}
+		if(mCursor != null) {
+			Log.i(TAG, "not null album");
+			mCursor.moveToFirst();
+			final int count = mCursor.getCount();
+			Log.i(TAG, String.valueOf(count));
+			for (int i = 0; i < count; i++) {
+				String father = mCursor.getString(0);
+				albums.add(father);
+				mCursor.moveToNext();
+			}
+		}
+		return mCursor;
+	}
 	private static class MusicDbHelper extends SQLiteOpenHelper {
-		/*
-		private static final String DB_NAME = "jam_player.db";
-		private static final String TAG = "MusicDbHelper";
-		private static final int DB_VERSION = 2;
-		public static final String TABLE_NAME = "medias";
-		public static final String _ID = "_id";
-		public static final String TITLE = "title";
-		public static final String ALBUM = "album";
-		public static final String ARTIST = "artist";
-		public static final String URI_PATH = "uri";
-		public static final String URL_PATH = "url";
-		public static final String DURATION = "duration";
-		public static final String ARTWORK_URI = "";
-		public static final String SERVICE_TYPE = "service";
-		*/
+
 		private Context context;
 		private static MusicDbHelper mInstance;
 		public static MusicDbHelper getInstance(Context context) {
@@ -244,6 +272,7 @@ public class MusicTable {
 		//I've made this onUpgrade so simple as columns won't really be added/removed very often at all.
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			Log.i(TAG, "onUpgrade()");
 			db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
 			onCreate(db);
 		}

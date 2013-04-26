@@ -44,7 +44,7 @@ import android.provider.MediaStore;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.Toast;
-//TODO need to make SQLiteOpenHelper a singleton for db access? dunno though
+
 public class JamService extends Service implements OnCompletionListener, OnPreparedListener,OnBufferingUpdateListener,OnErrorListener, MusicFocusable,
 PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	
@@ -147,7 +147,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     @Override
     public void onCreate() {
     	db = new MusicTable(this);
-    	//queries need to be mapped to a cursor adapter somehow so we can show db stuff in a listview efficiently.
         Log.i(TAG, "debug: Creating service");
         // Create the Wifi lock (this does not acquire the lock, this just creates it)
         mWifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))

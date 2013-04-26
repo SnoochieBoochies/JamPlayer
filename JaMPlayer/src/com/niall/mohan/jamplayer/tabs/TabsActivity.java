@@ -40,31 +40,20 @@ import android.widget.TabHost.TabContentFactory;
 public class TabsActivity extends TabActivity implements OnTabChangeListener, OnItemClickListener,ViewPager.OnPageChangeListener {
 	private static String TAG = "TabsActivity";
 	private TabHost mTabHost;
-	private ViewPager viewPager;
-	private PagerAdapter pagerAdapter;
 	private ListView list_song;
-	private ExpandableListView exp_list_google;
-	private ExpandableListView exp_list_dropbox;
-	private ExpandableListView exp_list_local;
 	public static BaseAdapter displayAdapter;
 	public static ExpandableListAdapter exp_list_adapter;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		startService(new Intent(this,JamService.class));
 		setContentView(R.layout.tabmain);
 		if (savedInstanceState != null) {
             mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab")); //set the tab as per the saved state
             mTabHost.getTabWidget().getChildAt(0).getLayoutParams().width =(int) 30;
         }
-		
-		exp_list_adapter = new ExpandableListAdapter(this);
-		exp_list_google= (ExpandableListView) findViewById(R.id.exp_list_google);
-		exp_list_google.setAdapter(exp_list_adapter);
-		exp_list_dropbox = (ExpandableListView) findViewById(R.id.exp_list_dropbox);
-		exp_list_dropbox.setAdapter(exp_list_adapter);
-		exp_list_local = (ExpandableListView) findViewById(R.id.exp_list_local);
-		exp_list_local.setAdapter(exp_list_adapter);
+
 		createTabs();
 	}
 	protected void onSaveInstanceState(Bundle outState) {
@@ -74,10 +63,11 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener, On
 
 	private void createTabs() {
 		mTabHost = getTabHost();
-		mTabHost.addTab(mTabHost.newTabSpec("Google").setIndicator("Google").setContent(R.id.exp_list_google));
-        mTabHost.addTab(mTabHost.newTabSpec("Soundcloud").setIndicator("Soundcloud").setContent(R.id.list_soundcloud));
-        mTabHost.addTab(mTabHost.newTabSpec("Dropbox").setIndicator("Dropbox").setContent(R.id.exp_list_dropbox));
-        mTabHost.addTab(mTabHost.newTabSpec(MediaUtils.Data_Local).setIndicator(MediaUtils.Data_Local).setContent(R.id.exp_list_local));
+		mTabHost.addTab(mTabHost.newTabSpec("Google").setIndicator("Google").setContent(new Intent(this,GooglePlayActivity.class)));
+        mTabHost.addTab(mTabHost.newTabSpec("Soundcloud").setIndicator("Soundcloud").setContent(new Intent(this,SoundcloudActivity.class)));
+        mTabHost.addTab(mTabHost.newTabSpec("Dropbox").setIndicator("Dropbox").setContent(new Intent(this,DropboxActivity.class)));
+        //mTabHost.addTab(mTabHost.newTabSpec(MediaUtils.Data_Local).setIndicator(MediaUtils.Data_Local).setContent(R.id.exp_list_local));
+        mTabHost.addTab(mTabHost.newTabSpec("Local").setIndicator("LOCAL").setContent(new Intent(this,LocalActivity.class)));
         mTabHost.setOnTabChangedListener(this);
 	}
 	@Override
@@ -92,8 +82,8 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener, On
 		Log.i(TAG, "tab changed " + tabId);
 		MediaUtils utils = MediaUtils.getInstance();
 		//utils.bind_data_adapter(this, tabId);
-		int pos = this.mTabHost.getCurrentTab();
-		this.viewPager.setCurrentItem(pos);
+		//if(tabId.equals("Local"))
+			//startActivity(new Intent(getApplicationContext(), LocalActivity.class));
 
 	}
 

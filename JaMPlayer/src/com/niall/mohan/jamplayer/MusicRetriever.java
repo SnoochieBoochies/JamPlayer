@@ -29,8 +29,8 @@ public class MusicRetriever {
 	public MusicRetriever(ContentResolver mResolver, Context context) {
 		db = new MusicTable(context);
 		this.mResolver = mResolver;
-		pushToDb();
-		//retrieveFromDatabase();
+		//pushToDb();
+		retrieveFromDatabase();
 		//prepare();
 	}
 	public void pushToDb() {
@@ -55,13 +55,20 @@ public class MusicRetriever {
 	//still atm only retreiving from sd card.
 	//need to put in shared preferences for the first startup of the app so i don't keep quering the sd card.
 	public void retrieveFromDatabase() {
-		ContentResolver mResolver = getContentResolver();
-		Cursor mCursor = mResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,MusicTable.MEDIA_PROJECTION,null,null,null);
-		mCursor.moveToFirst();
+		ArrayList<JamSongs> lest = (ArrayList<JamSongs>) db.queryAll();
+		for(JamSongs s: lest) {
+			Log.i(TAG, s.getTitle());
+		}
+		//ContentResolver mResolver = getContentResolver();
+		//Cursor mCursor = mResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,MusicTable.MEDIA_PROJECTION,null,null,null);
+		//mCursor.moveToFirst();
+		//do {
+		//	Log.i(TAG, mCursor.getString(1));
+		//} while(mCursor.moveToNext());
 		//db = new MusicTable();
 		//songs = db.queryAll(); //broadcast this?
-		mCursor.close();
-		Log.i(TAG, "list size from database is: "+ songs.size());
+		//mCursor.close();
+		//Log.i(TAG, "list size from database is: "+ songs.size());
 
 	}
 	/*
