@@ -15,30 +15,4 @@
         android:listSelector="@android:color/transparent"
         android:transcriptMode="alwaysScroll" />
 
-    <!-- 
-	<ExpandableListView
-	    android:id="@+id/local_list_album"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:cacheColorHint="#00000000"
-	    android:listSelector="@android:color/transparent"
-	    android:transcriptMode="disabled" />
-	
-  	    <ListView
-  	        android:id="@+id/local_list_song"
-  	        android:layout_width="fill_parent"
-  	        android:layout_height="wrap_content"
-  	        android:cacheColorHint="#00000000"
-  	        android:clickable="true" />
-	-->
-
-	    <ImageButton
-	        android:id="@+id/control_play_btn"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_centerHorizontal="true"
-	        android:background="@android:color/transparent"
-	        android:padding="@dimen/play_btn_pad"
-	        android:src="@drawable/ic_appwidget_music_play" />
 </RelativeLayout>

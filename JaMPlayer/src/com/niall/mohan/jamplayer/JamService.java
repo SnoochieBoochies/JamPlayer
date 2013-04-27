@@ -8,6 +8,7 @@ import java.util.Currency;
 import java.util.List;
 
 import com.niall.mohan.jamplayer.adapters.JamSongs;
+import com.niall.mohan.jamplayer.tabs.SongList;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -422,8 +423,8 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     /** Updates the notification. */
     void updateNotification(String text) {
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), MainActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT);
+                new Intent(getApplicationContext(), SongList.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP),0);
         mNotification.setLatestEventInfo(getApplicationContext(), "JaMPlayer", text, pi);
         mNotificationManager.notify(NOTIFICATION_ID, mNotification);
     }
@@ -435,8 +436,9 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
      */
     void setUpAsForeground(String text) {
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), MainActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT);
+                new Intent(getApplicationContext(), SongList.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|
+                 Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                0);
         mNotification = new Notification();
         mNotification.tickerText = text;
         mNotification.icon = R.drawable.ic_headset;

@@ -29,6 +29,7 @@ public class MusicTable {
 	public static final String DURATION = "duration";
 	public static final String ARTWORK_URI = "";
 	public static final String SERVICE_TYPE = "service";
+	private static String service;
 	private static MusicDbHelper dbHelper;
 	private SQLiteDatabase db;
 	private final Context context;
@@ -182,6 +183,7 @@ public class MusicTable {
 
 
 	public Cursor getArtistsByService(String service) {
+		this.service = service;
 		db = dbHelper.getReadableDatabase();
 		Log.w(TAG,"service = "+service);
 		Cursor mCursor = null;
@@ -224,8 +226,7 @@ public class MusicTable {
 	public Cursor getAlbumSongs(String artist, String album) {
 		Cursor mCursor = null;
 		if(album == null || album.length() == 0) {
-			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
-				     null, null, null, null, null);
+			mCursor = db.query(true,TABLE_NAME, SELECTION, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[1], null, null, null);
 		} else {
 			mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[3] + " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%'", null, SELECTION[1], null, null, null);
 		}
