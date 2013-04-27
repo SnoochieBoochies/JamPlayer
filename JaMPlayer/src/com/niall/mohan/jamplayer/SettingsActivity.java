@@ -651,7 +651,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 					for(int i = 0; i <d.length;i++) {
 						JSONObject f = finalResult.getJSONObject(i);
 						d[i] = new JamSongs(f.getString("title"),f.getString("stream_url"),"soundcloud",f.getString("label_name"),f.getString("duration"),
-								f.getString("label_name"),f.getString("title"));
+								f.getString("label_name"), -1);
 						Log.i(TAG,d[i].title);
 						//Log.i(TAG,d[i]);
 					}
@@ -757,7 +757,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     			} else {
     				// Text search can return 0 to N responses
     				GNSearchResponse resp = result.getBestResponse();
-    				JamSongs song = new JamSongs(resp.getTrackTitle(), songUrl, "dropbox", resp.getAlbumTitle(), null, resp.getArtist(), resp.getTrackTitle());
+    				JamSongs song = new JamSongs(resp.getTrackTitle(), songUrl, "dropbox", resp.getAlbumTitle(), null, resp.getArtist(), resp.getTrackNumber());
     				SettingsActivity.dropboxSongs.add(song);
     				pushToDb(song);
     				Log.i("SONGS",String.valueOf(SettingsActivity.dropboxSongs.size()));

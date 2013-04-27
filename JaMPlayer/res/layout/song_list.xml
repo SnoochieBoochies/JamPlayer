@@ -1,19 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg" >
-    
-    <ListView android:id="@id/android:list"
-              android:layout_width="fill_parent" 
-              android:layout_height="fill_parent"
-              android:layout_weight="1"
-              android:drawSelectorOnTop="false"/>
+    android:background="@drawable/bg3" >
 
-    <TextView android:id="@id/android:empty"
-              android:layout_width="fill_parent" 
-              android:layout_height="fill_parent"
-              android:text="No songs found on SD Card."/>
+	    <TextView
+	        android:id="@+id/album_name"
+	        android:layout_width="fill_parent"
+	        android:layout_height="50dp"
+	        android:layout_alignParentLeft="true"
+	        android:layout_alignParentTop="true"
+	        android:paddingLeft="20dp"
+	        android:paddingTop="5dp"
+	        android:text="Album Name"
+	        android:textAppearance="?android:attr/textAppearanceLarge" />
 
-</LinearLayout>
+	    <ListView
+	        android:id="@id/android:list"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent"
+	        android:layout_above="@+id/control_play_btn"
+	        android:layout_below="@+id/album_name"
+	        android:cacheColorHint="@color/transparent"
+	        android:paddingLeft="20dp" />
+
+	    <ImageButton
+	        android:id="@+id/control_play_btn"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentBottom="true"
+	        android:layout_centerHorizontal="true"
+	        android:background="@android:color/transparent"
+	        android:padding="@dimen/play_btn_pad"
+	        android:src="@drawable/ic_appwidget_music_play" />
+
+</RelativeLayout>

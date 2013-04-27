@@ -50,7 +50,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	
 	/*--------------------------------------*/
 	MusicTable db;
-	private List<JamSongs> playList;
+	private ArrayList<JamSongs> albumSongs;
 
 	private static final String TAG = "JamService";
 	public static final String ACTION_TOGGLE_PLAYBACK ="com.niall.mohan.jamplayer.action.TOGGLE_PLAYBACK";
@@ -83,7 +83,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     boolean mStartPlayingAfterRetrieve = false; 
  // if mStartPlayingAfterRetrieve is true, this variable indicates the URL that we should
     // start playing when we are ready. If null, we should play a random song from the device
-    Uri mWhatToPlayAfterRetrieve = null;
+    String mWhatToPlayAfterRetrieve = null;
     enum PauseReason {
         UserRequest,  // paused by user request
         FocusLoss,    // paused because of audio focus loss
@@ -165,34 +165,62 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         mMediaButtonReceiverComponent = new ComponentName(this, MusicIntentReceiver.class);
         
     }
-    
-    private void play(int position) {
-    	if(mPlayer == null) {
-    		mPlayer = new MediaPlayer();
-    		if(position == -1) { //this is just to check if we press the list(meaning we have a list index) or just the play button.
-        		currentListPosition = 0;
-        	} else currentListPosition = position;
-    		if (mState == State.Retrieving) {
-    			// If we are still retrieving media, just set the flag to start playing when we're
-    	            // ready
-    	        	//mWhatToPlayAfterRetrieve = mRetriever.songs.get(currentListPosition).getURI(); // play a random song
-    	        mWhatToPlayAfterRetrieve = Uri.parse(mRetriever.songs.get(currentListPosition).path); 
-    	        mStartPlayingAfterRetrieve = true;
-    	        return;
-    		}
-    		tryToGetAudioFocus();
-    	        // actually play the song
-    		if (mState == State.Stopped) {
-    	            // If we're stopped, just go ahead to the next song and start playing
-    			playNextSong(mRetriever.songs.get(currentListPosition).path);
-    		}
-    	    else if (mState == State.Paused) {
-    	            // If we're paused, just continue playback and restore the 'foreground service' state.
-    	    	mState = State.Playing;
-    	    	setUpAsForeground(mSongTitle + " (playing)");
-    	    	configAndStartMediaPlayer();
-    	    }
-    	}
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+    	String action = intent.getAction();
+    	currentListPosition = intent.getIntExtra("position", -1);
+    	albumSongs = intent.getParcelableArrayListExtra("albumsongs");
+		if(action.equals(ACTION_PLAY)) processPlayRequest(currentListPosition);
+		else if(action.equals(ACTION_STOP)) processStopRequest();
+		else if(action.equals(ACTION_PAUSE)) processPauseRequest();
+		else if(action.equals(ACTION_TOGGLE_PLAYBACK)) processTogglePlaybackRequest();
+    	Log.i(TAG, String.valueOf(currentListPosition));
+    	//processPlayRequest(currentListPosition);
+    	return START_NOT_STICKY;
+    }
+    void processTogglePlaybackRequest() {
+        if (mState == State.Paused || mState == State.Stopped) {
+            processPlayRequest(currentListPosition);
+        } else {
+            processPauseRequest();
+        }
+    }
+    private void processPlayRequest(int position) {
+    	if (mState == State.Retrieving) {
+            // If we are still retrieving media, just set the flag to start playing when we're
+            // ready
+            mWhatToPlayAfterRetrieve = albumSongs.get(position).getPath();
+            mStartPlayingAfterRetrieve = true;
+            return;
+        }
+        tryToGetAudioFocus();
+        if (mState == State.Stopped) {
+            // If we're stopped, just go ahead to the next song and start playing
+            playNextSong(albumSongs.get(position).getPath());
+            Log.i("LELEL", "LELEL");
+        }
+        else if (mState == State.Paused) {
+            // If we're paused, just continue playback and restore the 'foreground service' state.
+            mState = State.Playing;
+            setUpAsForeground(mSongTitle + " (playing)");
+            configAndStartMediaPlayer();
+        }
+    }
+
+    void processPauseRequest() {
+        if (mState == State.Retrieving) {
+            // If we are still retrieving media, clear the flag that indicates we should start
+            // playing when we're ready
+            mStartPlayingAfterRetrieve = false;
+            return;
+        }
+        if (mState == State.Playing) {
+            // Pause media player and cancel the 'foreground service' state.
+            mState = State.Paused;
+            mPlayer.pause();
+            relaxResources(false); // while paused, we always retain the MediaPlayer
+            // do not give up audio focus
+        }
     }
     private void pause() {
     	if (mState == State.Retrieving) {
@@ -209,152 +237,20 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             // do not give up audio focus
         }
     }
-    private long duration() {
-        return 0;
-    }
-    private long getAlbumId() {
-
-        return 0;
+    void processStopRequest() {
+        processStopRequest(true);
     }
 
-    private String getAlbumName() {
+    void processStopRequest(boolean force) {
+        if (mState == State.Playing || mState == State.Paused || force) {
+            mState = State.Stopped;
 
-        return null;
-    }
+            // let go of all resources...
+            relaxResources(true);
+            giveUpAudioFocus();
 
-    private long getArtistId() {
-
-        return 0;
-    }
-
-    private String getArtistName() {
-
-        return null;
-    }
-
-    private long getAudioId() {
-
-        return 0;
-    }
-
-    private String getPath() {
-
-        return null;
-    }
-
-    private int getRepeatMode() {
-
-        return 0;
-    }
-
-    private int getShuffleMode() {
-
-        return 0;
-    }
-
-    private boolean isPlaying() {
-
-        return false;
-    }
-
-    /*Based on the open source google code for applying weakreferences to services
-    * in the context of an audio player.
-    * https://github.com/android/platform_packages_apps_music/blob/master/src/com/android/music/MediaPlaybackService.java
-    */
-    /*
-    private final IBinder serviceStub = new ServiceStub(this);
-    static class ServiceStub extends IJamService.Stub {
-        WeakReference<JamService> mService;
-
-        ServiceStub(JamService service) {
-            mService = new WeakReference<JamService>(service);
-        }
-		@Override
-		public boolean isPlaying() throws RemoteException {
-			return mService.get().isPlaying();
-		}
-		@Override
-		public void prev() throws RemoteException {
-			mService.get().processPrevRequest();
-		}
-		@Override
-		public void next() throws RemoteException {
-			mService.get().processNextRequest();
-		}
-		@Override
-		public long duration() throws RemoteException {
-			return mService.get().duration();
-		}
-		@Override
-		public long position() throws RemoteException {
-			return mService.get().position();
-		}
-		@Override
-		public long seek(long pos) throws RemoteException {
-			return mService.get().seek(pos);
-		}
-		@Override
-		public String getAlbumName() throws RemoteException {
-			return mService.get().getAlbumName();
-		}
-
-		@Override
-		public long getAlbumId() throws RemoteException {
-			return mService.get().getAlbumId();
-		}
-
-		@Override
-		public String getArtistName() throws RemoteException {
-			return mService.get().getArtistName();
-		}
-
-		@Override
-		public long getArtistId() throws RemoteException {
-			return mService.get().getArtistId();
-		}
-
-		@Override
-		public String getPath() throws RemoteException {
-			return mService.get().getPath();
-		}
-
-		@Override
-		public void setShuffleMode() throws RemoteException {
-			//mService.get().setShuffleMode();
-		}
-
-		@Override
-		public int getShuffleMode() throws RemoteException {
-			return mService.get().getShuffleMode();
-		}
-
-		@Override
-		public void setRepeatMode() throws RemoteException {
-			//mService.get().setRepeatMode();
-		}
-
-		@Override
-		public int getRepeatMode() throws RemoteException {
-			return mService.get().getRepeatMode();
-		}
-		@Override
-		public void play(int position) throws RemoteException {
-			mService.get().play(position);
-		}
-		@Override
-		public void pause() throws RemoteException {
-			mService.get().pause();
-		}
-
-    }
-    */
-    void processPrevRequest() {
-    	
-    }
-    void processNextRequest() {
-        if (mState == State.Playing || mState == State.Paused) {
-            tryToGetAudioFocus();
-            playNextSong(null);
+            // service is no longer necessary. Will be started again if needed.
+            stopSelf();
         }
     }
 
@@ -439,7 +335,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             else {
                 mIsStreaming = false; // playing a locally available song
 
-                playingItem = mRetriever.songs.get(currentListPosition);
+                playingItem = albumSongs.get(currentListPosition);
                 if (playingItem == null) {
                     Toast.makeText(this,
                             "No available music to play. Place some music on your external storage "
@@ -452,13 +348,13 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
                 // set the source of the media player a a content URI
                 createMediaPlayerIfNeeded();
                 mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                Log.i("playItem: ", playingItem.path);
-                mPlayer.setDataSource(getApplicationContext(), Uri.parse(playingItem.path));
+                Log.i("playItem: ", playingItem.getPath());
+                mPlayer.setDataSource(getApplicationContext(), Uri.parse(playingItem.getPath()));
             }
 
             //mSongTitle = playingItem.getTitle();
-            mSongTitle = mRetriever.songs.get(currentListPosition).artist
-            		+ " - " +mRetriever.songs.get(currentListPosition).title;
+            mSongTitle = albumSongs.get(currentListPosition).getArtist()+" - "+albumSongs.get(currentListPosition).getTitle();
+            
 
             mState = State.Preparing;
             setUpAsForeground(mSongTitle + " (loading)");
@@ -481,14 +377,17 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             ex.printStackTrace();
         }
     }
-    long position() {
-    	return currentListPosition;
-    }
+
 
     /** Called when media player is done playing current song. */
     public void onCompletion(MediaPlayer player) {
         // The media player finished playing the current song, so we go ahead and start the next.
-        playNextSong(mRetriever.songs.get(currentListPosition+1).path);
+    	int newPos = currentListPosition+1;
+    	if(newPos < albumSongs.size())
+    		playNextSong(albumSongs.get(newPos).getPath());
+    	else {
+    		player.stop();
+    	}
     }
 
     /** Called when media player is done preparing. */
@@ -540,7 +439,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
                 PendingIntent.FLAG_UPDATE_CURRENT);
         mNotification = new Notification();
         mNotification.tickerText = text;
-        mNotification.icon = R.drawable.indicator_ic_mp_playing_large;
+        mNotification.icon = R.drawable.ic_headset;
         mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
         mNotification.setLatestEventInfo(getApplicationContext(), "JaMPlayer",
                 text, pi);
@@ -592,20 +491,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         }
     }
 
-    /**
-     * Seeks to the position specified.
-     *
-     * @param pos The position to seek to, in milliseconds
-     */
-    public long seek(long pos) {
-        if (mPlayer != null) {
-            if (pos < 0) pos = 0;
-            if (pos > duration()) pos = duration();
-            mPlayer.seekTo((int) pos);
-            //return mPlayer.seekTo((int) pos);
-        }
-        return -1;
-    }
+
     @Override
     public void onDestroy() {
         // Service is being killed, so make sure we release our resources

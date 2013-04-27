@@ -41,6 +41,7 @@
 		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.DropboxActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.SongList"></activity>
 		 <activity
       android:name="com.dropbox.client2.android.AuthActivity"
       android:launchMode="singleTask"
@@ -59,9 +60,6 @@
                 <action android:name="com.niall.mohan.jamplayer.action.TOGGLE_PLAYBACK" />
                 <action android:name="com.niall.mohan.jamplayer.action.PLAY" />
                 <action android:name="com.niall.mohan.jamplayer.action.PAUSE" />
-                <action android:name="com.niall.mohan.jamplayer.action.SKIP" />
-                <action android:name="com.niall.mohan.jamplayer.action.REWIND" />
-                <action android:name="com.niall.mohan.jamplayer.action.STOP" />
             </intent-filter>
             <intent-filter>
                 <action android:name="com.niall.mohan.jamplayer.action.URL" />

@@ -30,7 +30,7 @@ public class MusicRetriever {
 		db = new MusicTable(context);
 		this.mResolver = mResolver;
 		//pushToDb();
-		retrieveFromDatabase();
+		//retrieveFromDatabase();
 		//prepare();
 	}
 	public void pushToDb() {
@@ -40,7 +40,7 @@ public class MusicRetriever {
 				MusicTable.MEDIA_PROJECTION, null, null, null);
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
-				JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5));
+				JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getInt(5));
 				//Log.i(TAG, mediaInfo._album);
 				//MediaInfo mediaInfo = new MediaInfo(cursor.getString(0));
 				db.insert(mediaInfo);

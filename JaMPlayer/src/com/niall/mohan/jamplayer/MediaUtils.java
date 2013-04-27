@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.niall.mohan.jamplayer.adapters.JamSongs;
-import com.niall.mohan.jamplayer.tabs.ExpandableListAdapter;
 import com.niall.mohan.jamplayer.tabs.TabsActivity;
 
 import android.app.Activity;
@@ -71,70 +70,6 @@ public class MediaUtils {
 								.getAbsolutePath()));
 		intent.putExtra("cmd", cmd);
 		context.sendBroadcast(intent);
-	}
-
-	public void bind_data_adapter(Context context, String tabId) {
-		if (context == null || tabId == null) {
-			return;
-		}
-		List<String> father = null;
-		List<JamSongs> child = null;
-		ContentResolver resolver = context.getContentResolver();
-		//if (Data_Googles.equals(tabId)) {
-		//	father = find_father_data(resolver, new String[] { tabId });
-	//		Log.i(MediaUtilsTag, "father:" + father.size());
-		//	ExpandableListAdapter expandAdapter = (ExpandableListAdapter) TabsActivity.exp_list_adapter;
-			//expandAdapter.onDatasetChanged(father, child);
-		//	return;
-		//} else if (Data_SoundCloud.equals(tabId)) {
-		//	MusicTable mediaSqlite = new MusicTable(context);
-		//	father = mediaSqlite
-		//			.query(new String[] { MusicTable.PLAYLIST });
-		//} else 
-		if (Data_Local.equals(tabId)) {
-			father = find_father_data(resolver,
-					new String[] { MusicTable.ARTIST });
-		} else {
-			father = find_father_data(resolver, new String[] { tabId });
-		}
-		MediaAdapter mediaAdapter = (MediaAdapter) TabsActivity.displayAdapter;
-		//mediaAdapter.onDatasetChanged(father, null);
-	}
-
-	public List<JamSongs> find_child_data(ContentResolver resolver,
-			String where, String[] values) {
-		ArrayList<JamSongs> childs = new ArrayList<JamSongs>();
-		Cursor cursor = resolver.query(
-				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-				MusicTable.MEDIA_PROJECTION, where + "=?", values, null);
-		if (cursor == null)
-			return null;
-		cursor.moveToFirst();
-		final int count = cursor.getCount();
-		for (int i = 0; i < count; i++) {
-			JamSongs child = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getString(5));
-			childs.add(child);
-			cursor.moveToNext();
-		}
-		return childs;
-	}
-
-	public List<String> find_father_data(ContentResolver resolver, String[] type) {
-		ArrayList<String> fathers = new ArrayList<String>();
-		Cursor cursor = resolver.query(
-				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, type, null, null,
-				null);
-		if (cursor == null)
-			return null;
-		cursor.moveToFirst();
-		final int count = cursor.getCount();
-		for (int i = 0; i < count; i++) {
-			String father = cursor.getString(0);
-			fathers.add(father);
-			cursor.moveToNext();
-		}
-		unduplicate(fathers);
-		return fathers;
 	}
 
 

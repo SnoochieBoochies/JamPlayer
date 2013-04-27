@@ -6,6 +6,7 @@ import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ExpandableListActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -21,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.BaseAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
@@ -30,23 +32,19 @@ import android.widget.RelativeLayout;
 import android.widget.SimpleCursorTreeAdapter;
 import android.widget.Toast;
 
-public class LocalActivity extends ExpandableListActivity implements  OnItemClickListener {
-	public ExpandableListView list_view;
+public class LocalActivity extends ExpandableListActivity {
 	private static String TAG = "LocalActivity";
 	private ArtistAlbumListAdapter adapter;
 	private String currentArtist;
 	private String currentArtistId;
 	private String currentAlbum;
 	private String currentAlbumId;
-	private String currentSong;
 	private Cursor artistCursor;
-	private static int lastListPos = -1;
-	private static int lastListPosFine = -1;
 	public MusicTable db;
 	//setup. Get last selected artist/album combo.
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		startService(new Intent(this,JamService.class));
+		//startService(new Intent(this,JamService.class));
 		super.onCreate(savedInstanceState);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		if(savedInstanceState != null) {
@@ -54,23 +52,20 @@ public class LocalActivity extends ExpandableListActivity implements  OnItemClic
 			currentArtistId = savedInstanceState.getString("selectedartistid");
 			currentAlbum = savedInstanceState.getString("currentalbum");
 			currentAlbumId = savedInstanceState.getString("selectedalbumid");
-			currentSong = savedInstanceState.getString("currentsong");
 
 		}
 		setContentView(R.layout.local_tab_layout);
-		//list_view = (ExpandableListView) findViewById(R.id.local_list_artist);
-
 		db = new MusicTable(this);
 		db.open();
 		fillData();
 	}
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
+		Log.i(TAG, "onSaveInstanceState()");
 		outState.putString("selectedartist", currentArtist);
 		outState.putString("selectedartistid", currentArtistId);
 		outState.putString("selectedalbum", currentAlbum);
 		outState.putString("selectedalbumid", currentAlbumId);
-		outState.putString("selectedsong", currentSong);
 		super.onSaveInstanceState(outState);
 	}
 	@Override
@@ -84,24 +79,38 @@ public class LocalActivity extends ExpandableListActivity implements  OnItemClic
 		super.onDestroy();
 	}
 	
-
-	@Override
-	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-		Log.i(TAG, "onItemClick()");
-	}
-	int mGroupIdColumnIndex;
-	void fillData() {
+	private void fillData() {
 		Log.i(TAG, "fillData()");
 		artistCursor = db.getArtistsByService("local");
 		startManagingCursor(artistCursor);
-		//Log.i(TAG, artistCursor.getColumnName(2));
-		//artistCursor.moveToFirst();
-		//mGroupIdColumnIndex = artistCursor.getColumnIndexOrThrow(MusicTable.ARTIST);
-		//artistCursor = db.query("artist", 2, "local");
 		adapter = new ArtistAlbumListAdapter(artistCursor, this,
 				android.R.layout.simple_expandable_list_item_1,android.R.layout.simple_expandable_list_item_1, 
 				new String [] {MusicTable.ARTIST}, new int [] {android.R.id.text1}, new String [] {MusicTable.ALBUM}, new int [] {android.R.id.text1});
 		setListAdapter(adapter);
+		db.close();
+	}
+	
+	@Override
+	public boolean onChildClick(ExpandableListView parent, View v,
+			int groupPosition, int childPosition, long id) {
+		Log.i(TAG, "onChildClick()");
+		currentAlbumId = Long.valueOf(id).toString();
+		Cursor malbumCur = (Cursor) getExpandableListAdapter().getChild(groupPosition, childPosition);
+		//String album = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
+		currentAlbum = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
+		Intent intent = new Intent(this, SongList.class);
+		intent.putExtra("albumId", currentAlbumId);
+		//unknown album
+		if(currentAlbum == null || currentAlbum.equals(MediaStore.UNKNOWN_STRING)) {
+			artistCursor.moveToPosition(groupPosition);
+			currentArtistId = artistCursor.getString(artistCursor.getColumnIndex(MusicTable.ARTIST));
+			intent.putExtra("artist", currentArtistId);
+		}
+		intent.putExtra("album", currentAlbum);
+		currentArtist = artistCursor.getString(1);
+		intent.putExtra("artist", currentArtist);
+		startActivity(intent);
+		return true;
 	}
 	public class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
 
@@ -130,6 +139,5 @@ public class LocalActivity extends ExpandableListActivity implements  OnItemClic
 		}
 
 	}
-	
 	
 }
