@@ -1,24 +1,134 @@
 package com.niall.mohan.jamplayer.tabs;
 
+import com.niall.mohan.jamplayer.JamService;
+import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.RetreiveGoogleUrl;
 
 import android.app.ExpandableListActivity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.media.AudioManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.SimpleCursorTreeAdapter;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class GooglePlayActivity extends ExpandableListActivity implements  OnItemClickListener {
-
+public class GooglePlayActivity extends ExpandableListActivity {
+	private static String TAG = "GooglePlayActivity";
+	private ArtistAlbumListAdapter adapter;
+	private String currentArtist;
+	private String currentArtistId;
+	private String currentAlbum;
+	private String currentAlbumId;
+	private Cursor artistCursor;
+	public MusicTable db;
 	@Override
-	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-		// TODO Auto-generated method stub
-		
-	}
+	protected void onCreate(Bundle savedInstanceState) {
+		//startService(new Intent(this,JamService.class));
+		super.onCreate(savedInstanceState);
+		setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		if(savedInstanceState != null) {
+			currentArtist = savedInstanceState.getString("selectedartist");
+			currentArtistId = savedInstanceState.getString("selectedartistid");
+			currentAlbum = savedInstanceState.getString("currentalbum");
+			currentAlbumId = savedInstanceState.getString("selectedalbumid");
 
+		}
+		setContentView(R.layout.local_tab_layout);
+		db = new MusicTable(this);
+		db.open();
+		fillData();
+	}
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		Log.i(TAG, "onSaveInstanceState()");
+		outState.putString("selectedartist", currentArtist);
+		outState.putString("selectedartistid", currentArtistId);
+		outState.putString("selectedalbum", currentAlbum);
+		outState.putString("selectedalbumid", currentAlbumId);
+		super.onSaveInstanceState(outState);
+	}
+	@Override
+	protected void onResume() {
+		fillData();
+		super.onResume();
+	}
+	@Override
+	protected void onDestroy() {
+		db.close();
+		super.onDestroy();
+	}
+	private void fillData() {
+		Log.i(TAG, "fillData()");
+		artistCursor = db.getArtistsByService("google");
+		startManagingCursor(artistCursor);
+		adapter = new ArtistAlbumListAdapter(artistCursor, this,
+				android.R.layout.simple_expandable_list_item_1,android.R.layout.simple_expandable_list_item_1, 
+				new String [] {MusicTable.ARTIST}, new int [] {android.R.id.text1}, new String [] {MusicTable.ALBUM}, new int [] {android.R.id.text1});
+		setListAdapter(adapter);
+		db.close();
+	}
+	@Override
+	public boolean onChildClick(ExpandableListView parent, View v,
+			int groupPosition, int childPosition, long id) {
+		Log.i(TAG, "onChildClick()");
+		currentAlbumId = Long.valueOf(id).toString();
+		Cursor malbumCur = (Cursor) getExpandableListAdapter().getChild(groupPosition, childPosition);
+		//String album = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
+		currentAlbum = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
+		Intent intent = new Intent(this, SongList.class);
+		intent.putExtra("albumId", currentAlbumId);
+		//unknown album
+		if(currentAlbum == null || currentAlbum.equals(MediaStore.UNKNOWN_STRING)) {
+			artistCursor.moveToPosition(groupPosition);
+			currentArtistId = artistCursor.getString(artistCursor.getColumnIndex(MusicTable.ARTIST));
+			intent.putExtra("artist", currentArtistId);
+		}
+		intent.putExtra("album", currentAlbum);
+		currentArtist = artistCursor.getString(1);
+		intent.putExtra("artist", currentArtist);
+		startActivity(intent);
+		return true;
+	}
+	private class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
+
+		public ArtistAlbumListAdapter(Cursor cursor, Context context,
+                int groupLayout, int childLayout, String[] groupFrom,
+                int[] groupTo, String[] childrenFrom, int[] childrenTo) {
+			super(context, cursor, groupLayout, groupFrom, groupTo,
+                        childLayout, childrenFrom, childrenTo);
+		}
+
+
+
+		@Override
+		protected Cursor getChildrenCursor(Cursor groupCursor) {
+			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
+			startManagingCursor(albumCursor);
+			//albumCursor.moveToFirst();
+			return albumCursor;
+		}
+		@Override
+		public View getChildView(int groupPosition, int childPosition,
+				boolean isLastChild, View convertView, ViewGroup parent) {
+			Log.i(TAG,"childview");
+			return super.getChildView(groupPosition, childPosition, isLastChild,
+					convertView, parent);
+		}
+
+	}
 }

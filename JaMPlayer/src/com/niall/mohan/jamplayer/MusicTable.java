@@ -9,7 +9,9 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.provider.MediaStore;
@@ -18,7 +20,7 @@ import android.util.Log;
 public class MusicTable {
 	public static final String TAG = "MediaSqlite";
 	private static final String DB_NAME = "jam_player.db";
-	private static final int DB_VERSION = 9;
+	private static final int DB_VERSION = 1;
 	public static final String TABLE_NAME = "medias";
 	public static final String _ID = "_id";
 	public static final String TITLE = "title";
@@ -29,27 +31,24 @@ public class MusicTable {
 	public static final String DURATION = "duration";
 	public static final String ARTWORK_URI = "";
 	public static final String SERVICE_TYPE = "service";
+	public static final String TRACK_ID = "trackid";
 	private static String service;
 	private static MusicDbHelper dbHelper;
 	private SQLiteDatabase db;
 	private final Context context;
 	public static String [] MEDIA_PROJECTION = new String [] {
 		MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION,
-		MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DISPLAY_NAME, MediaStore.Audio.Media.TRACK
+		MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.TRACK
 	};
 	public static String [] SELECTION = new String [] {
 		_ID, TITLE, ALBUM, ARTIST, PATH,
-		DURATION, SERVICE_TYPE, TRACK_NUM};
-	//public MusicTable() {
-	//	dbHelper = getInstance();
-	//	SQLiteDatabase db = dbHelper.getWritableDatabase();
-	//	queryAll();
-	//	db.close();
-	//}
+		DURATION, SERVICE_TYPE, TRACK_NUM, TRACK_ID};
+
 	public MusicTable(Context context) {
 		this.context = context;
 		dbHelper = MusicDbHelper.getInstance(context);
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
+		db.delete(TABLE_NAME, "1", null);
 		//queryAll();
 		db.close();
 	}
@@ -71,7 +70,7 @@ public class MusicTable {
 
 	public void insert(JamSongs info) {
 		//Log.i(TAG,info._title);
-		Cursor cursor = query(info.getTitle(), 1,"local");
+		Cursor cursor = query(info.getTitle(), 1,info.getService());
 		//Log.i("INFO", info.title);
 		if(cursor.getCount() != 0) {
 			cursor.close();
@@ -82,7 +81,12 @@ public class MusicTable {
 		cursor.close();
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		ContentValues values = setInfo(info);
-		db.insert(TABLE_NAME, null, values);
+		try {
+			db.insert(TABLE_NAME, null, values);
+		} catch(SQLiteException cons) {
+			//Nothing to do. this is just from trying to insert duplicates.
+			Log.i(TAG, "duplicates found");
+		}
 		db.close();
 	}
 
@@ -96,8 +100,8 @@ public class MusicTable {
 		List<JamSongs> medias = new ArrayList<JamSongs>();
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
-			JamSongs mediaInfo =new JamSongs(cursor.getString(1),cursor.getString(4),cursor.getString(7), cursor.getString(2), cursor.getString(6), cursor.getString(3),
-					cursor.getInt(7));
+			JamSongs mediaInfo =new JamSongs(cursor.getString(1),cursor.getString(4),cursor.getString(6), cursor.getString(2), cursor.getString(5), cursor.getString(3),
+					cursor.getInt(7), cursor.getString(8));
 			medias.add(mediaInfo);
 			//Log.i("LIST: ", String.valueOf(medias.get(i)._cloud));
 			cursor.moveToNext();
@@ -177,6 +181,8 @@ public class MusicTable {
 		values.put(DURATION, mediaInfo.getDuration());
 		values.put(PATH, mediaInfo.getPath());
 		values.put(SERVICE_TYPE, mediaInfo.getService());
+		values.put(TRACK_NUM, mediaInfo.getTrackNum());
+		values.put(TRACK_ID, mediaInfo.getId());
 		//values.put(MusicDbHelper.PLAYLIST, mediaInfo._playlist);
 		return values;
 	}
@@ -191,10 +197,9 @@ public class MusicTable {
 			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
 				     null, null, null, null, null);
 		} else {
-			//just try and implement the adapter like in the ExpandAdapter.
 			//mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[7]+ " like '%"+ service+"%'", null, null, null,null,null);
 			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7]+ " like '%"+service+"%'",null, null, null, null,null);
-			mCursor = db.query(true, TABLE_NAME, new String [] {_ID, ARTIST,ALBUM}, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[3], null, null, null);
+			mCursor = db.query(true, TABLE_NAME, new String [] {_ID, ARTIST,ALBUM}, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[3], null, SELECTION[3], null);
 			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7] + " = ?",null, null, null, null,null);
 			//mCursor = db.rawQuery("SELECT _id,artist,album,title FROM "+TABLE_NAME+" WHERE service = '%"+service+"%'", null);
 		}
@@ -213,7 +218,7 @@ public class MusicTable {
 			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
 				     null, null, null, null, null);
 		} else {
-			mCursor = db.query(false, TABLE_NAME, new String [] {_ID,ARTIST,ALBUM}, SELECTION[3] + " like '%"+artist+"%'", null, SELECTION[2], null, null, null);
+			mCursor = db.query(false, TABLE_NAME, new String [] {_ID,ARTIST,ALBUM}, SELECTION[3] + " like '%"+artist+"%'", null, SELECTION[2], null, SELECTION[2], null);
 		}
 		if(mCursor != null) {
 			Log.i(TAG, "not null album");
@@ -228,7 +233,7 @@ public class MusicTable {
 		if(album == null || album.length() == 0) {
 			mCursor = db.query(true,TABLE_NAME, SELECTION, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[1], null, null, null);
 		} else {
-			mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[3] + " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%'", null, SELECTION[1], null, null, null);
+			mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[3] + " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%'", null, SELECTION[1], null, SELECTION[7], null);
 		}
 		if(mCursor != null) {
 			Log.i(TAG, "not null songs");
@@ -262,7 +267,7 @@ public class MusicTable {
 			Log.i(TAG,"onCreate()");	
 			db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" + _ID + " INTEGER PRIMARY KEY, " +
 					 TITLE + " VARCHAR," + PATH + " VARCHAR,"+ ALBUM + " VARCHAR,"+ TRACK_NUM + " INTEGER," +  DURATION + " VARCHAR," + ARTIST + " VARCHAR," 
-					+ SERVICE_TYPE +" VARCHAR)");
+					+ SERVICE_TYPE +" VARCHAR, "+TRACK_ID+" VARCHAR UNIQUE)");
 		}
 		//I've made this onUpgrade so simple as columns won't really be added/removed very often at all.
 		@Override

@@ -11,13 +11,14 @@ public class GPlaySongAdapter extends JamSongs {
 	}
 	public JamSongs setMediaInfo(Song s) {
 		JamSongs mediaInfo = new JamSongs();//new JamSongs(s.getTitle(),s.getUrl(),1,s.getAlbum(),String.valueOf(s.getDurationMillis()),s.getArtist(),s.getTitle());
-		mediaInfo.title = s.getTitle();
-		mediaInfo.path = s.getUrl();
-		mediaInfo.service = "google";
-		mediaInfo.album = s.getAlbum();
-		mediaInfo.duration = String.valueOf(s.getDurationMillis());
-		mediaInfo.artist = s.getArtist();
-		mediaInfo.display_name = s.getTitle();
+		mediaInfo.setTitle(s.getTitle());
+		mediaInfo.setPath(s.getUrl());
+		mediaInfo.setService("google");
+		mediaInfo.setAlbum(s.getAlbum());
+		mediaInfo.setArtist(s.getArtist());
+		mediaInfo.setDuration(String.valueOf(s.getDurationMillis()));
+		mediaInfo.setTrackNum(s.getTrack());
+		mediaInfo.setId(s.getId());
 		return mediaInfo;
 	}
 }

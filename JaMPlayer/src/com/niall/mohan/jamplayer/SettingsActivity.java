@@ -76,6 +76,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.text.InputFilter.LengthFilter;
 import android.util.Log;
@@ -115,6 +116,7 @@ import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.gracenote.mmid.MobileSDK.GNConfig;
 import com.gracenote.mmid.MobileSDK.GNOperationStatusChanged;
 import com.gracenote.mmid.MobileSDK.GNOperations;
@@ -125,6 +127,7 @@ import com.gracenote.mmid.MobileSDK.GNSearchResultReady;
 import com.gracenote.mmid.MobileSDK.GNStatus;
 import com.niall.mohan.jamplayer.adapters.GPlaySongAdapter;
 import com.niall.mohan.jamplayer.adapters.JamSongs;
+import com.niall.mohan.jamplayer.tabs.SongList;
 import com.niall.mohan.jamplayer.tabs.SoundcloudActivity;
 import com.niall.mohan.jamplayer.tabs.TabsActivity;
 import com.soundcloud.api.ApiWrapper;
@@ -206,36 +209,17 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	        	        		@Override
 	        	        		protected void onPostExecute(Boolean success) {
 	        	        			Log.i(TAG,"songs size"+gPlayList.size());
-	        	        			//now we have all of the songs in the list. push to the DB, but first construct the urls.
+	        	        			//now we have all of the songs in the list. push to the DB.
 	        	        			if(success) {
 	        	        				progress.setVisibility(View.VISIBLE);
 	        	        				//insert the current songs into the db. later during execution when a user clicks an artist/album, we'll batch fetch those.
+	        	        				//urls aren't constructed at this point. at the songlist stage there will be an async task to check for the valid
+	        	        				//token(which forms part of the url). If not, get a new one and form new urls.
 	        	        				for(Song s: gPlayList) {
 	        	        					GPlaySongAdapter adapter = new GPlaySongAdapter(s);
-	        	        					adapter.setMediaInfo(s);
-	        	        					Log.i("IENRGINERG",s.getTitle());
-	        	        					pushToDb(adapter.setMediaInfo(s));
-	        	        					/*
-	        	        					try {
-	        	        						URI songURL;
-	        	        						if(GoogleMusicApi.getSongStream(s) != null){
-	        	        							songURL = GoogleMusicApi.getSongStream(s);
-													s.setUrl(String.valueOf(songURL));
-													GPlaySongAdapter adapter = new GPlaySongAdapter(s);
-													pushToDb(adapter.setMediaInfo(s));
-													//Log.i(TAG,String.valueOf(songURL));
-	        	        						} else {
-	        	        							showToast("Some URL's weren't retrieved");
-	        	        						}
-	        	        						
-											} catch (JSONException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
-											} catch (URISyntaxException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
-											}
-											*/
+	        	        					JamSongs jamToDb = adapter.setMediaInfo(s);
+	        	        					//Log.i("IENRGINERG",s.getTitle());
+	        	        					pushToDb(jamToDb);
 	        	        				}
 	        	        				progress.setVisibility(View.GONE);
 	        	        				
@@ -354,6 +338,8 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 							JSONObject f = finalResult.getJSONObject(i);
 							d[i] = f.getString("stream_url");
 						}
+					} else if(wrapper.get(resource).getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+						
 					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -651,7 +637,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 					for(int i = 0; i <d.length;i++) {
 						JSONObject f = finalResult.getJSONObject(i);
 						d[i] = new JamSongs(f.getString("title"),f.getString("stream_url"),"soundcloud",f.getString("label_name"),f.getString("duration"),
-								f.getString("label_name"), -1);
+								f.getString("label_name"), -1, "");
 						Log.i(TAG,d[i].title);
 						//Log.i(TAG,d[i]);
 					}
@@ -673,29 +659,37 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	List<Song> gPlayList;
     public class GoogleMusicLoginTask extends AsyncTask<String, Void, Boolean> {
     	protected SettingsActivity mActivity;
-
+    	protected SongList act;
         protected String mScope;
         protected String mEmail;
         protected int mRequestCode;
         GoogleMusicLoginTask(SettingsActivity activity) {
         	this.mActivity = activity;
         }
+        public GoogleMusicLoginTask(SongList activity) {
+			this.act = activity;
+		}
         @Override
         protected Boolean doInBackground(String... params) {
         	boolean success = false;
             try {
-  	          String token2 = GoogleAuthUtil.getToken(mActivity,params[0], "sj");
-  	          Log.i(TAG, "TOKE MOTHERFUCKER: \n"+ token2);
-  	          if (!TextUtils.isEmpty(token2)) {
+  	          String token = GoogleAuthUtil.getToken(mActivity,params[0], "sj");
+  	          Log.i(TAG, "TOKE MOTHERFUCKER: \n"+ token);
+  	          if (!TextUtils.isEmpty(token)) {
                 GoogleMusicApi.createInstance(mActivity);
-                success = GoogleMusicApi.login(mActivity, token2);
+                success = GoogleMusicApi.login(mActivity, token);
                 gPlayList = GoogleMusicApi.getAllSongs(mActivity);
-                Log.i(TAG,String.valueOf(gPlayList.size()));	
-                
+                preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                Editor writer = preferences.edit();
+				writer.putString("Google_Access", token);
+				writer.commit();
                 if (!success)
-                	GoogleAuthUtil.invalidateToken(mActivity, token2);
-
+                	GoogleAuthUtil.invalidateToken(mActivity, token);
   	          }
+            } catch (GooglePlayServicesAvailabilityException playEx) {
+                // GooglePlayServices.apk is either old, disabled, or not present.
+                //mActivity.showDialog(playEx.getConnectionStatusCode());
+                GooglePlayServicesUtil.getErrorDialog(playEx.getConnectionStatusCode(), mActivity, 1001);
             } catch (UserRecoverableAuthException e) {
                 mActivity.startActivityForResult(e.getIntent(), 1001);
                 e.printStackTrace();
@@ -757,7 +751,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     			} else {
     				// Text search can return 0 to N responses
     				GNSearchResponse resp = result.getBestResponse();
-    				JamSongs song = new JamSongs(resp.getTrackTitle(), songUrl, "dropbox", resp.getAlbumTitle(), null, resp.getArtist(), resp.getTrackNumber());
+    				JamSongs song = new JamSongs(resp.getTrackTitle(), songUrl, "dropbox", resp.getAlbumTitle(), null, resp.getArtist(), resp.getTrackNumber(), resp.getTrackId());
     				SettingsActivity.dropboxSongs.add(song);
     				pushToDb(song);
     				Log.i("SONGS",String.valueOf(SettingsActivity.dropboxSongs.size()));

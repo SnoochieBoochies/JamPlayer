@@ -15,7 +15,6 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
 
-//TODO NEED TO CHANGE THIS CLASS TO RETREIVE FROM DATABASE, IF THE DATABASE IS POPULATED.
 public class MusicRetriever {
 	final String TAG = "MusicRetriever";
 	ContentResolver mResolver; //this is used to get metadata info...
@@ -31,7 +30,6 @@ public class MusicRetriever {
 		this.mResolver = mResolver;
 		//pushToDb();
 		//retrieveFromDatabase();
-		//prepare();
 	}
 	public void pushToDb() {
 		ContentResolver resolver = getContentResolver();
@@ -40,7 +38,7 @@ public class MusicRetriever {
 				MusicTable.MEDIA_PROJECTION, null, null, null);
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
-				JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getInt(5));
+				JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getInt(5), "");
 				//Log.i(TAG, mediaInfo._album);
 				//MediaInfo mediaInfo = new MediaInfo(cursor.getString(0));
 				db.insert(mediaInfo);

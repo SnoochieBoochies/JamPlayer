@@ -7,7 +7,7 @@
 # view AndroidManifest.xml #generated:58
 -keep class com.niall.mohan.jamplayer.JamService { <init>(...); }
 
-# view AndroidManifest.xml #generated:69
+# view AndroidManifest.xml #generated:71
 -keep class com.niall.mohan.jamplayer.PlaybackIntentReceiver { <init>(...); }
 
 # view AndroidManifest.xml #generated:35

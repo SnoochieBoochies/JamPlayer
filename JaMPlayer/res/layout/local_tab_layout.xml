@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg3"
+    android:gravity=""
     tools:context=".MainActivity"
     tools:ignore="ExtraText" >
 
@@ -13,6 +14,6 @@
         android:layout_above="@+id/control_play_btn"
         android:cacheColorHint="#00000000"
         android:listSelector="@android:color/transparent"
-        android:transcriptMode="alwaysScroll" />
+        android:transcriptMode="disabled" />
 
 </RelativeLayout>

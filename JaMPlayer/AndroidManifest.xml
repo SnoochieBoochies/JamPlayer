@@ -60,6 +60,8 @@
                 <action android:name="com.niall.mohan.jamplayer.action.TOGGLE_PLAYBACK" />
                 <action android:name="com.niall.mohan.jamplayer.action.PLAY" />
                 <action android:name="com.niall.mohan.jamplayer.action.PAUSE" />
+                <action android:name="com.niall.mohan.jamplayer.action.STOP"/>
+                <action android:name="com.naill.mohan.jamplayer.action.NONE" />
             </intent-filter>
             <intent-filter>
                 <action android:name="com.niall.mohan.jamplayer.action.URL" />

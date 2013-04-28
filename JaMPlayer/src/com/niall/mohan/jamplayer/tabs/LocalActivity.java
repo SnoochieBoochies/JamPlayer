@@ -112,7 +112,7 @@ public class LocalActivity extends ExpandableListActivity {
 		startActivity(intent);
 		return true;
 	}
-	public class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
+	private class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
 
 		public ArtistAlbumListAdapter(Cursor cursor, Context context,
                 int groupLayout, int childLayout, String[] groupFrom,
@@ -126,7 +126,7 @@ public class LocalActivity extends ExpandableListActivity {
 		@Override
 		protected Cursor getChildrenCursor(Cursor groupCursor) {
 			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
-			LocalActivity.this.startManagingCursor(albumCursor);
+			startManagingCursor(albumCursor);
 			//albumCursor.moveToFirst();
 			return albumCursor;
 		}

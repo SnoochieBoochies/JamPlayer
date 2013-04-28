@@ -13,8 +13,8 @@ public class JamSongs  implements Parcelable{
 	public String display_name;
 	public String service;
 	public int trackNum;
-	
-	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum) {
+	public String id;
+	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum, String id) {
 		this.title = title;
 		this.path = path;
 		this.service = service;
@@ -22,6 +22,7 @@ public class JamSongs  implements Parcelable{
 		this.artist = artist;
 		this.duration = duration;
 		this.trackNum = trackNum;
+		this.id = id;
 	}
 	public JamSongs() {};
 
@@ -44,6 +45,12 @@ public class JamSongs  implements Parcelable{
 	public String getService() {
 		return service;
 	}
+	public int getTrackNum() {
+		return trackNum;
+	}
+	public String getId() {
+		return id;
+	}
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -62,6 +69,12 @@ public class JamSongs  implements Parcelable{
 	public void setService(String service) {
 		this.service = service;
 	}
+	public void setTrackNum(int trackNum) {
+		this.trackNum = trackNum;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
 	/*implements parceable to be able to send an arraylist of jamsongs to the service, so we can play an album etc.*/
 	@Override
 	public int describeContents() {
@@ -76,6 +89,7 @@ public class JamSongs  implements Parcelable{
 		dest.writeString(duration);
 		dest.writeString(artist);
 		dest.writeInt(trackNum);
+		dest.writeString(id);
 	}
 	public static final Parcelable.Creator<JamSongs> CREATOR = new Creator<JamSongs>() {
 		@Override
@@ -96,5 +110,6 @@ public class JamSongs  implements Parcelable{
 		duration = source.readString();
 		artist = source.readString();
 		trackNum = source.readInt();
+		id = source.readString();
 	}
 }

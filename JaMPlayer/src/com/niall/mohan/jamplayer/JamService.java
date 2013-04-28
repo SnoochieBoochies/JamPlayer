@@ -18,6 +18,7 @@ import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -41,8 +42,10 @@ import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -50,8 +53,7 @@ public class JamService extends Service implements OnCompletionListener, OnPrepa
 PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	
 	/*--------------------------------------*/
-	MusicTable db;
-	private ArrayList<JamSongs> albumSongs;
+	public static ArrayList<JamSongs> albumSongs;
 
 	private static final String TAG = "JamService";
 	public static final String ACTION_TOGGLE_PLAYBACK ="com.niall.mohan.jamplayer.action.TOGGLE_PLAYBACK";
@@ -61,6 +63,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     public static final String ACTION_SKIP = "com.niall.mohan.jamplayer.action.SKIP";
     public static final String ACTION_REWIND = "com.niall.mohan.jamplayerr.action.REWIND";
     public static final String ACTION_URL = "com.niall.mohan.jamplayer.action.URL";
+    public static final String ACTION_NONE = "com.niall.mohan.jamplayer.action.NONE";
     // The volume we set the media player to when we lose audio focus, but are allowed to reduce
     // the volume instead of stopping playback.
     public static final float DUCK_VOLUME = 0.1f;
@@ -146,8 +149,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             mPlayer.reset();
     }
     @Override
-    public void onCreate() {
-    	db = new MusicTable(this);
+    public void onCreate() {   	
         Log.i(TAG, "debug: Creating service");
         // Create the Wifi lock (this does not acquire the lock, this just creates it)
         mWifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
@@ -175,7 +177,9 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 		else if(action.equals(ACTION_STOP)) processStopRequest();
 		else if(action.equals(ACTION_PAUSE)) processPauseRequest();
 		else if(action.equals(ACTION_TOGGLE_PLAYBACK)) processTogglePlaybackRequest();
+		else if(action.equals(ACTION_NONE)) return START_NOT_STICKY;
     	Log.i(TAG, String.valueOf(currentListPosition));
+
     	//processPlayRequest(currentListPosition);
     	return START_NOT_STICKY;
     }
@@ -190,6 +194,9 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     	if (mState == State.Retrieving) {
             // If we are still retrieving media, just set the flag to start playing when we're
             // ready
+
+    		Log.i(TAG,"pos "+ String.valueOf(position));
+            Log.i(TAG, albumSongs.get(position).getPath());
             mWhatToPlayAfterRetrieve = albumSongs.get(position).getPath();
             mStartPlayingAfterRetrieve = true;
             return;
@@ -320,6 +327,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
      */
     void playNextSong(String manualUrl) {
         mState = State.Stopped;
+        Log.i(TAG, manualUrl);
         relaxResources(false); // release everything except MediaPlayer
 
         try {

@@ -11,6 +11,7 @@ import com.gracenote.mmid.MobileSDK.GNStatus;
 import com.niall.mohan.jamplayer.JamService;
 import com.niall.mohan.jamplayer.MediaUtils;
 import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.SettingsActivity;
 
 import android.app.AlertDialog;
 import android.app.TabActivity;
@@ -22,6 +23,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.widget.AdapterView;
@@ -43,7 +46,7 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener,Vie
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//startService(new Intent(this,JamService.class));
+		startService(new Intent(JamService.ACTION_NONE));
 		setContentView(R.layout.tabmain);
 		if (savedInstanceState != null) {
             mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab")); //set the tab as per the saved state
@@ -90,5 +93,22 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener,Vie
 		this.mTabHost.setCurrentTab(arg0);
 	}
 
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()) {
+			case R.id.menu_settings:
+				Intent intent = new Intent(this, SettingsActivity.class);
+				this.startActivity(intent);
+				return true;
+		}
+		return false;
+		
+	}
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.activity_main, menu);
+		return true;
+	}
 
 }
