@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import android.content.Context;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -57,7 +58,7 @@ public class GoogleMusicApi {
 				context.getApplicationContext());
 		mHttpClient.setCookieStore(mCookieStore);
 		mHttpClient.setUserAgent("");
-		storageDirectory = new File(".");
+		storageDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "JaM Music");
 	}
 
 	public static final HttpClient getRawHttpClient() {
@@ -74,8 +75,6 @@ public class GoogleMusicApi {
 
 	public static final boolean login(Context context, String authToken) {
 		if (!TextUtils.isEmpty(authToken)) {
-			Log.i("GoogleMusicApi",authToken);
-
 			SimpleForm form = new SimpleForm().close();
 			GoogleMusicApi.setAuthorizationHeader(authToken);
 			mHttpClient.post(context,
@@ -128,7 +127,6 @@ public class GoogleMusicApi {
 
 	public static final URI getSongStream(Song song) throws JSONException,
 			URISyntaxException {
-
 		RequestParams params = new RequestParams();
 		params.put("u", "0");
 		params.put("songid", song.getId());
@@ -136,7 +134,6 @@ public class GoogleMusicApi {
 
 		String response = mHttpClient.get("https://play.google.com/music/play",
 				params);
-
 		JSONObject jsonObject = new JSONObject(response);
 		//Log.i("FIELDS",jsonObject.toString());
 		return new URI(jsonObject.optString("url", null));

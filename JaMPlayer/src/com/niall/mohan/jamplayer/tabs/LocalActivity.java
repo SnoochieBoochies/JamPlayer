@@ -39,6 +39,7 @@ public class LocalActivity extends ExpandableListActivity {
 	private String currentArtistId;
 	private String currentAlbum;
 	private String currentAlbumId;
+	private String currentService;
 	private Cursor artistCursor;
 	public MusicTable db;
 	//setup. Get last selected artist/album combo.
@@ -52,7 +53,7 @@ public class LocalActivity extends ExpandableListActivity {
 			currentArtistId = savedInstanceState.getString("selectedartistid");
 			currentAlbum = savedInstanceState.getString("currentalbum");
 			currentAlbumId = savedInstanceState.getString("selectedalbumid");
-
+			currentService = savedInstanceState.getString("selectedservice");
 		}
 		setContentView(R.layout.local_tab_layout);
 		db = new MusicTable(this);
@@ -66,6 +67,7 @@ public class LocalActivity extends ExpandableListActivity {
 		outState.putString("selectedartistid", currentArtistId);
 		outState.putString("selectedalbum", currentAlbum);
 		outState.putString("selectedalbumid", currentAlbumId);
+		outState.putString("selectedservice", currentService);
 		super.onSaveInstanceState(outState);
 	}
 	@Override
@@ -98,6 +100,7 @@ public class LocalActivity extends ExpandableListActivity {
 		Cursor malbumCur = (Cursor) getExpandableListAdapter().getChild(groupPosition, childPosition);
 		//String album = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
 		currentAlbum = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
+		currentService = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.SERVICE_TYPE));
 		Intent intent = new Intent(this, SongList.class);
 		intent.putExtra("albumId", currentAlbumId);
 		//unknown album
@@ -106,6 +109,7 @@ public class LocalActivity extends ExpandableListActivity {
 			currentArtistId = artistCursor.getString(artistCursor.getColumnIndex(MusicTable.ARTIST));
 			intent.putExtra("artist", currentArtistId);
 		}
+		intent.putExtra("service", currentService);
 		intent.putExtra("album", currentAlbum);
 		currentArtist = artistCursor.getString(1);
 		intent.putExtra("artist", currentArtist);
@@ -125,7 +129,7 @@ public class LocalActivity extends ExpandableListActivity {
 
 		@Override
 		protected Cursor getChildrenCursor(Cursor groupCursor) {
-			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
+			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("service")),groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
 			startManagingCursor(albumCursor);
 			//albumCursor.moveToFirst();
 			return albumCursor;

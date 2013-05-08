@@ -38,22 +38,22 @@
         </activity>
         <activity 
             android:name="com.niall.mohan.jamplayer.tabs.LocalActivity"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity" android:launchMode="singleTask"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.DropboxActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.SongList"></activity>
 		 <activity
-      android:name="com.dropbox.client2.android.AuthActivity"
-      android:launchMode="singleTask"
-      android:configChanges="orientation|keyboard">
-      <intent-filter>
-        <!-- Change this to be db- followed by your app key -->
-        <data android:scheme="db-7d5b3w41ptwxz3t" />
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.BROWSABLE"/>
-        <category android:name="android.intent.category.DEFAULT" />
-      </intent-filter>
-    </activity>
+	      android:name="com.dropbox.client2.android.AuthActivity"
+	      android:launchMode="singleTask"
+	      android:configChanges="orientation|keyboard">
+	      <intent-filter>
+	        <!-- Change this to be db- followed by your app key -->
+	        <data android:scheme="db-7d5b3w41ptwxz3t" />
+	        <action android:name="android.intent.action.VIEW" />
+	        <category android:name="android.intent.category.BROWSABLE"/>
+	        <category android:name="android.intent.category.DEFAULT" />
+	      </intent-filter>
+    	</activity>
        
 	<service android:exported="false" android:name=".JamService">
 	    <intent-filter>
@@ -61,11 +61,8 @@
                 <action android:name="com.niall.mohan.jamplayer.action.PLAY" />
                 <action android:name="com.niall.mohan.jamplayer.action.PAUSE" />
                 <action android:name="com.niall.mohan.jamplayer.action.STOP"/>
-                <action android:name="com.naill.mohan.jamplayer.action.NONE" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.niall.mohan.jamplayer.action.URL" />
-                <data android:scheme="http" />
+                <action android:name="com.niall.mohan.jamplayer.action.NONE" />
+                <action android:name="com.niall.mohan.jamplayer.action.SKIP" />
             </intent-filter>
 	</service>
 	<receiver android:name=".PlaybackIntentReceiver">

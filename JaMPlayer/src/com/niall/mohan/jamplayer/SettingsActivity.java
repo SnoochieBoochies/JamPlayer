@@ -23,7 +23,9 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javazoom.jl.decoder.Bitstream;
 import javazoom.jl.decoder.BitstreamException;
@@ -127,6 +129,7 @@ import com.gracenote.mmid.MobileSDK.GNSearchResultReady;
 import com.gracenote.mmid.MobileSDK.GNStatus;
 import com.niall.mohan.jamplayer.adapters.GPlaySongAdapter;
 import com.niall.mohan.jamplayer.adapters.JamSongs;
+import com.niall.mohan.jamplayer.tabs.GooglePlayActivity;
 import com.niall.mohan.jamplayer.tabs.SongList;
 import com.niall.mohan.jamplayer.tabs.SoundcloudActivity;
 import com.niall.mohan.jamplayer.tabs.TabsActivity;
@@ -159,8 +162,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	ProgressBar progress;
     private static final String YOUR_APP_CONSUMER_KEY = "9ba8dd1f82ad58e8470b3e5a69cc828c";
     private static final String YOUR_APP_CONSUMER_SECRET = "9269708fca324437b41fb738fb78a5f7";
-    private static final String LAST_FM_API_KEY = "d750eda9db3bbb8873246ca0a1725726";
-    private static final String LAST_FM_SECRET = "15af00d4e63c6d6e6b3d194e284743c2";
     final static private String APP_KEY = "7d5b3w41ptwxz3t";
     final static private String APP_SECRET = "1nkra6j4iyhnvnp";
     final static private AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
@@ -181,12 +182,15 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	final ApiWrapper sCloudWrapper = new ApiWrapper(YOUR_APP_CONSUMER_KEY, YOUR_APP_CONSUMER_SECRET, REDIRECT_URI, null);
 	String actualToken="";
 	String scope;
+	GoogleMusicLoginTask login;
+	boolean gPlaySuccess;
 	@Override
 	protected Dialog onCreateDialog(int id) {
 		final AccountManager am = AccountManager.get(SettingsActivity.this);
 		WebView webView;// = new WebView(SettingsActivity.this);
 		webView = (WebView) findViewById(R.id.webview);
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 	  switch (id) {
 	    case GPLAY:
 	      builder.setTitle("Select a Google account");
@@ -205,29 +209,33 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	        	        	String token = future.getResult().getString(AccountManager.KEY_AUTHTOKEN);
 	        	        	Log.i("token stored: ",token);
 	        	        	//It's ok to call it here as it's part of the async task.
-	        	        	GoogleMusicLoginTask login = new GoogleMusicLoginTask(SettingsActivity.this) {
+	        	        	login = new GoogleMusicLoginTask(SettingsActivity.this) {
 	        	        		@Override
-	        	        		protected void onPostExecute(Boolean success) {
-	        	        			Log.i(TAG,"songs size"+gPlayList.size());
-	        	        			//now we have all of the songs in the list. push to the DB.
-	        	        			if(success) {
-	        	        				progress.setVisibility(View.VISIBLE);
-	        	        				//insert the current songs into the db. later during execution when a user clicks an artist/album, we'll batch fetch those.
-	        	        				//urls aren't constructed at this point. at the songlist stage there will be an async task to check for the valid
-	        	        				//token(which forms part of the url). If not, get a new one and form new urls.
-	        	        				for(Song s: gPlayList) {
-	        	        					GPlaySongAdapter adapter = new GPlaySongAdapter(s);
-	        	        					JamSongs jamToDb = adapter.setMediaInfo(s);
-	        	        					//Log.i("IENRGINERG",s.getTitle());
-	        	        					pushToDb(jamToDb);
-	        	        				}
-	        	        				progress.setVisibility(View.GONE);
-	        	        				
+	        	        		protected void onPostExecute(Boolean result) {
+	        	        			super.onPostExecute(result);
+	        	        			if(result) {
+	        	        				gPlaySuccess = true;
 	        	        			}
-	        	        			
 	        	        		}
 	        	        	};
-	        	        	login.execute(GoogleAccounts[which].name);
+	        	        	login.execute(GoogleAccounts[which].name);	
+	        	        	progress.setVisibility(View.VISIBLE);
+	        				//insert the current songs into the db. later during execution when a user clicks an artist/album, we'll batch fetch those.
+	        				//urls aren't constructed at this point. at the songlist stage there will be an async task to check for the valid
+	        				//token(which forms part of the url). If not, get a new one and form new urls.
+	        				Thread thread = new Thread(new Runnable() {
+								@Override
+								public void run() {
+									for(Song s: gPlayList) {
+        	        					GPlaySongAdapter adapter = new GPlaySongAdapter(s);
+        	        					JamSongs jamToDb = adapter.setMediaInfo(s);
+        	        					//Log.i("IENRGINERG",s.getTitle());
+        	        					pushToDb(jamToDb);
+        	        				}
+        	        				progress.setVisibility(View.GONE);
+								}
+							});
+	        				thread.run();
 	        	        } catch (Exception e) {
 	        	          e.printStackTrace();
 	        	        }
@@ -242,8 +250,8 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	    	final Account sCloudAccount;
 	    	final int size2 = SCloudAccounts.length;
 	    	String[] names2 = new String[size2];
-	    	actualToken = getPreferences(Context.MODE_PRIVATE).getString("SCloud_Access", null);
-	    	scope = getPreferences(Context.MODE_PRIVATE).getString("SCloud_Scope", null);
+	    	actualToken = preferences.getString("SCloud_Access", null);
+	    	scope = preferences.getString("SCloud_Scope", null);
 	    	
 	    	if(SCloudAccounts.length > 0) {
 	    		AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
@@ -252,28 +260,30 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	    			names2[i] = SCloudAccounts[i].name;
 	    		}
 	    		builder2.setItems(names2, new DialogInterface.OnClickListener() {
-	    			public void onClick(DialogInterface dialog, int which) {
+	    			@SuppressWarnings("deprecation")
+					public void onClick(DialogInterface dialog, final int which) {
 	    				// Stuff to do when the account is selected by the user
-	    				String access;
-						try {
-							access = am.blockingGetAuthToken(SCloudAccounts[which], "access_token", true);
-		    				Token toke = new Token(access,null, Token.SCOPE_NON_EXPIRING);
-		    	    		Log.i(TAG,toke.toString());
-		    	    		final ApiWrapper wrapper = new ApiWrapper(YOUR_APP_CONSUMER_KEY, YOUR_APP_CONSUMER_SECRET, REDIRECT_URI, toke);
-		    	    		Log.i(TAG,wrapper.getToken().toString());
-		    	    		SoundCloudSongTask sCloudTask = new SoundCloudSongTask(wrapper);
-		    	    		sCloudTask.execute(wrapper.getToken().toString());
-		    	    		
-						} catch (OperationCanceledException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (AuthenticatorException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} 
+	    				am.getAuthToken(SCloudAccounts[which], "access_token", true, new AccountManagerCallback<Bundle>() {
+	    					@Override
+	    					public void run(AccountManagerFuture<Bundle> arg0) {
+	    						try {
+									String access = arg0.getResult().getString(AccountManager.KEY_AUTHTOKEN);
+									Log.i(TAG, access);
+									Editor writer = preferences.edit();
+									writer.putString("SCloud_Access_Key", access);
+									writer.commit();
+								} catch (OperationCanceledException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (AuthenticatorException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}						
+	    					}
+	    				}, null);
 	    			}
 	    		});
 	    		return builder2.create();
@@ -289,7 +299,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 			       		 	try {
 								sCloudtoken = sCloudWrapper.authorizationCode(code);
 								Log.i(TAG, "CODE: "+sCloudtoken.toString());
-								Editor writer = getPreferences(Context.MODE_PRIVATE).edit();
+								Editor writer = preferences.edit();
 								writer.putString("SCloud_Access", sCloudtoken.access);
 								writer.commit();
 								writer.putString("SCloud_Scope", sCloudtoken.scope);
@@ -306,51 +316,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 		    	webView.loadUrl(String.valueOf(sCloudWrapper.authorizationCodeUrl(Endpoints.CONNECT, Token.SCOPE_NON_EXPIRING)));
 		    	setContentView(webView);
 		    	webView.requestFocus(View.FOCUS_DOWN);
-	    	} else {
-	    		//i have an access token. do stuff.
-	    		//Log.i(TAG, "HAVE ACCESS TOKEN: "+ actualToken);
-	    		Token t = new Token(actualToken, null, scope);
-	    		Log.i(TAG,t.toString());
-	    		final ApiWrapper wrapper = new ApiWrapper(YOUR_APP_CONSUMER_KEY, YOUR_APP_CONSUMER_SECRET, REDIRECT_URI, t);
-	    		Log.i(TAG,wrapper.getToken().toString());
-	    		try {
-	    			//Request resource = Request.to(Endpoints.MY_FOLLOWINGS);.with("client_id","9ba8dd1f82ad58e8470b3e5a69cc828c");
-	    			Request resource = Request.to("/me/followings/tracks");
-	    			//Stream stream = wrapper.resolveStreamUrl(resource.toUrl(), true);
-	    			Log.i(TAG, resource.toUrl());
-	    			//Log.i(TAG, stream.streamUrl);
-					HttpResponse resp = wrapper.get(resource);
-					if(wrapper.get(resource).getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-						//Log.i(TAG, "LEL");
-						//Stream [] stream;// = wrapper.resolveStreamUrl("http://api.soundcloud.com/tracks/23999498/stream?client_id=9ba8dd1f82ad58e8470b3e5a69cc828c", true);
-						//stream[0] = Http.getString(resp);
-						//Stream stream = wrapper.resolveStreamUrl("http://api.soundcloud.com/tracks/23999498/stream?client_id=9ba8dd1f82ad58e8470b3e5a69cc828c", true);
-						//Log.i(TAG,stream.toString());
-						/*This needs to be packaged up and sent to the playing activity i guess*/
-						BufferedReader reader = new BufferedReader(new InputStreamReader(resp.getEntity().getContent(), "UTF-8"));
-						String json = reader.readLine();
-						String [] d;
-						JSONTokener tokener = new JSONTokener(json);
-						JSONArray finalResult = new JSONArray(tokener);
-						Log.i(TAG,finalResult.getString(0));
-						d = new String[finalResult.length()];
-						for(int i = 0; i <d.length;i++) {
-							JSONObject f = finalResult.getJSONObject(i);
-							d[i] = f.getString("stream_url");
-						}
-					} else if(wrapper.get(resource).getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-						
-					}
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalStateException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 	    	}   	
 	    case LAST_FM:
 	    	Caller.getInstance().setCache(null); //API workaround. disables caching.	    	 
@@ -364,10 +329,12 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 					last_fm_pswd = (EditText)layout.findViewById(R.id.password);
 					String un = last_fm_username.getText().toString();
 					String pw = last_fm_pswd.getText().toString();
-					Session session = Authenticator.getMobileSession(un, pw, LAST_FM_API_KEY, LAST_FM_SECRET);
+					Session session = Authenticator.getMobileSession(un, pw, Constants.LAST_FM_API_KEY, Constants.LAST_FM_SECRET);
 					if(session.getKey() != null) {
-						Editor writer = getPreferences(Context.MODE_PRIVATE).edit();
+						Editor writer = preferences.edit();
 						writer.putString("LastFm_Access", session.getKey());
+						writer.commit();
+						writer.putString("LastFm_User", session.getUsername());
 						writer.commit();
 					} else {
 						showToast("Login Failed, try again.");
@@ -502,7 +469,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
         super.onResume();
         //store our tokens in here after all or any of the authorisations are completed.
         AndroidAuthSession session = mApi.getSession();
-
         // The next part must be inserted in the onResume() method of the
         // activity from which session.startAuthentication() was called, so
         // that Dropbox authentication completes properly.
@@ -512,18 +478,19 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
             try {
                 // Mandatory call to complete the auth
                 session.finishAuthentication();
-
                 // Store it locally in our app for later use
                 TokenPair tokens = session.getAccessTokenPair();
                 storeKeys(tokens.key, tokens.secret);
                 setLoggedIn(true);
-
             } catch (IllegalStateException e) {
                 showToast("Couldn't authenticate with Dropbox:" + e.getLocalizedMessage());
                 Log.i(TAG, "Error authenticating", e);
             }
-            
         }
+		if(gPlaySuccess) {
+			progress.setVisibility(View.GONE);
+			connectGplay.setText("Unlink from Google");
+		}
     }
 	public class DropboxSongsTask extends AsyncTask<String, Void, Boolean> {
 		@Override
@@ -592,66 +559,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 		}
 		
 	}
-	
-	public class SoundCloudSongTask extends AsyncTask<String, Void, Boolean> {
-		SettingsActivity activity;
-		ApiWrapper wrapper;
-		
-		public SoundCloudSongTask(ApiWrapper wrapper) {
-			this.wrapper = wrapper;
-		}
-		@Override
-		protected void onPreExecute() {
-			progress.setVisibility(View.VISIBLE);
-			super.onPreExecute();
-		}
-		@Override
-		protected void onPostExecute(Boolean result) {
-			progress.setVisibility(View.GONE);
-			super.onPostExecute(result);
-		}
-		@Override
-		protected Boolean doInBackground(String... params) {
-			boolean success = false;
-			try {
-				//Request resource = Request.to(Endpoints.MY_FOLLOWINGS);.with("client_id","9ba8dd1f82ad58e8470b3e5a69cc828c");
-				Request resource = Request.to("/me/followings/tracks");
-				//Stream stream = wrapper.resolveStreamUrl(resource.toUrl(), true);
-				//Log.i(TAG, resource.toUrl());
-				//Log.i(TAG, stream.streamUrl);
-				HttpResponse resp = wrapper.get(resource);
-				if(wrapper.get(resource).getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-					//Log.i(TAG, "LEL");
-					//Stream [] stream;// = wrapper.resolveStreamUrl("http://api.soundcloud.com/tracks/23999498/stream?client_id=9ba8dd1f82ad58e8470b3e5a69cc828c", true);
-					//stream[0] = Http.getString(resp);
-					//Stream stream = wrapper.resolveStreamUrl("http://api.soundcloud.com/tracks/23999498/stream?client_id=9ba8dd1f82ad58e8470b3e5a69cc828c", true);
-					//Log.i(TAG,stream.toString());
-					/*This needs to be packaged up and sent to the playing activity i guess*/
-					BufferedReader reader = new BufferedReader(new InputStreamReader(resp.getEntity().getContent(), "UTF-8"));
-					String json = reader.readLine();
-					JamSongs [] d;
-					JSONTokener tokener = new JSONTokener(json);
-					JSONArray finalResult = new JSONArray(tokener);
-					Log.i(TAG,finalResult.getString(0));
-					d = new JamSongs[finalResult.length()];
-					for(int i = 0; i <d.length;i++) {
-						JSONObject f = finalResult.getJSONObject(i);
-						d[i] = new JamSongs(f.getString("title"),f.getString("stream_url"),"soundcloud",f.getString("label_name"),f.getString("duration"),
-								f.getString("label_name"), -1, "");
-						Log.i(TAG,d[i].title);
-						//Log.i(TAG,d[i]);
-					}
-					success = true;
-				}
-			} catch (IOException io) {
-				io.printStackTrace();
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-			return success;
-		}
-		
-	}
 	/**
      * Represents an asynchronous task used to authenticate a user against the
      * GooglePlay Service
@@ -660,6 +567,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     public class GoogleMusicLoginTask extends AsyncTask<String, Void, Boolean> {
     	protected SettingsActivity mActivity;
     	protected SongList act;
+    	protected GooglePlayActivity act2;
         protected String mScope;
         protected String mEmail;
         protected int mRequestCode;
@@ -668,6 +576,9 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
         }
         public GoogleMusicLoginTask(SongList activity) {
 			this.act = activity;
+		}
+        public GoogleMusicLoginTask(GooglePlayActivity activity) {
+        	this.act2 = activity;
 		}
         @Override
         protected Boolean doInBackground(String... params) {
@@ -681,7 +592,8 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
                 gPlayList = GoogleMusicApi.getAllSongs(mActivity);
                 preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                 Editor writer = preferences.edit();
-				writer.putString("Google_Access", token);
+				writer.putString("Google_token", token);
+				writer.putString("Google_email", params[0]);
 				writer.commit();
                 if (!success)
                 	GoogleAuthUtil.invalidateToken(mActivity, token);

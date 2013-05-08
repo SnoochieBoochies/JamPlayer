@@ -21,7 +21,7 @@
 	        android:id="@id/android:list"
 	        android:layout_width="fill_parent"
 	        android:layout_height="fill_parent"
-	        android:layout_above="@+id/control_play_btn"
+	        android:layout_above="@+id/progress"
 	        android:layout_below="@+id/album_name"
 	        android:cacheColorHint="@color/transparent"
 	        android:paddingLeft="20dp" />
@@ -35,5 +35,43 @@
 	        android:background="@android:color/transparent"
 	        android:padding="@dimen/play_btn_pad"
 	        android:src="@drawable/ic_appwidget_music_play" />
+
+	    <SeekBar
+	        android:id="@+id/progress"
+	        style="?android:attr/progressBarStyleHorizontal"
+	        android:layout_width="wrap_content"
+	        android:layout_height="36dip"
+	        android:layout_above="@+id/control_play_btn"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/currenttime"
+	        android:paddingBottom="4dip"
+	        android:paddingLeft="8dip"
+	        android:paddingRight="8dip" />
+
+	    <TextView
+	        android:id="@+id/totaltime"
+	        android:layout_width="20dip"
+	        android:layout_height="wrap_content"
+	        android:layout_alignBottom="@android:id/progress"
+	        android:layout_alignParentRight="true"
+	        android:layout_weight="1"
+	        android:gravity="right"
+	        android:paddingRight="5dip"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textSize="14sp"
+	        android:textStyle="bold" />
+
+	    <TextView
+	        android:id="@+id/currenttime"
+	        android:layout_width="20dip"
+	        android:layout_height="wrap_content"
+	        android:layout_alignBottom="@+id/totaltime"
+	        android:layout_alignTop="@android:id/progress"
+	        android:layout_toLeftOf="@+id/totaltime"
+	        android:layout_weight="1"
+	        android:paddingLeft="5dip"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textSize="14sp"
+	        android:textStyle="bold" />
 
 </RelativeLayout>

@@ -1,9 +1,9 @@
 package com.niall.mohan.jamplayer.tabs;
 
-import com.niall.mohan.jamplayer.JamService;
+import java.util.ArrayList;
 import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
-import com.niall.mohan.jamplayer.RetreiveGoogleUrl;
+import com.niall.mohan.jamplayer.adapters.JamSongs;
 
 import android.app.ExpandableListActivity;
 import android.content.Context;
@@ -12,20 +12,12 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.support.v4.app.Fragment;
-import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ExpandableListView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.SimpleCursorTreeAdapter;
-import android.widget.AdapterView.OnItemClickListener;
 
 public class GooglePlayActivity extends ExpandableListActivity {
 	private static String TAG = "GooglePlayActivity";
@@ -34,8 +26,12 @@ public class GooglePlayActivity extends ExpandableListActivity {
 	private String currentArtistId;
 	private String currentAlbum;
 	private String currentAlbumId;
+	private String currentService;
 	private Cursor artistCursor;
 	public MusicTable db;
+	public static Intent intent;
+	SharedPreferences prefs;
+	ArrayList<JamSongs> albumSongs;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		//startService(new Intent(this,JamService.class));
@@ -60,6 +56,7 @@ public class GooglePlayActivity extends ExpandableListActivity {
 		outState.putString("selectedartistid", currentArtistId);
 		outState.putString("selectedalbum", currentAlbum);
 		outState.putString("selectedalbumid", currentAlbumId);
+		outState.putString("selectedservice", currentService);
 		super.onSaveInstanceState(outState);
 	}
 	@Override
@@ -72,6 +69,13 @@ public class GooglePlayActivity extends ExpandableListActivity {
 		db.close();
 		super.onDestroy();
 	}
+	@Override
+	protected void onStop() {
+		super.onStop();
+		adapter.getCursor().close();
+		artistCursor.close();
+		db.close();
+	}
 	private void fillData() {
 		Log.i(TAG, "fillData()");
 		artistCursor = db.getArtistsByService("google");
@@ -83,14 +87,13 @@ public class GooglePlayActivity extends ExpandableListActivity {
 		db.close();
 	}
 	@Override
-	public boolean onChildClick(ExpandableListView parent, View v,
-			int groupPosition, int childPosition, long id) {
+	public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
 		Log.i(TAG, "onChildClick()");
 		currentAlbumId = Long.valueOf(id).toString();
 		Cursor malbumCur = (Cursor) getExpandableListAdapter().getChild(groupPosition, childPosition);
-		//String album = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
 		currentAlbum = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
-		Intent intent = new Intent(this, SongList.class);
+		currentService = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.SERVICE_TYPE));
+		intent = new Intent(this, SongList.class);
 		intent.putExtra("albumId", currentAlbumId);
 		//unknown album
 		if(currentAlbum == null || currentAlbum.equals(MediaStore.UNKNOWN_STRING)) {
@@ -101,6 +104,7 @@ public class GooglePlayActivity extends ExpandableListActivity {
 		intent.putExtra("album", currentAlbum);
 		currentArtist = artistCursor.getString(1);
 		intent.putExtra("artist", currentArtist);
+		intent.putExtra("service", currentService);
 		startActivity(intent);
 		return true;
 	}
@@ -113,11 +117,9 @@ public class GooglePlayActivity extends ExpandableListActivity {
                         childLayout, childrenFrom, childrenTo);
 		}
 
-
-
 		@Override
 		protected Cursor getChildrenCursor(Cursor groupCursor) {
-			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
+			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("service")),groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
 			startManagingCursor(albumCursor);
 			//albumCursor.moveToFirst();
 			return albumCursor;
@@ -126,6 +128,7 @@ public class GooglePlayActivity extends ExpandableListActivity {
 		public View getChildView(int groupPosition, int childPosition,
 				boolean isLastChild, View convertView, ViewGroup parent) {
 			Log.i(TAG,"childview");
+
 			return super.getChildView(groupPosition, childPosition, isLastChild,
 					convertView, parent);
 		}

@@ -28,7 +28,7 @@ public class MusicRetriever {
 	public MusicRetriever(ContentResolver mResolver, Context context) {
 		db = new MusicTable(context);
 		this.mResolver = mResolver;
-		//pushToDb();
+		pushToDb();
 		//retrieveFromDatabase();
 	}
 	public void pushToDb() {

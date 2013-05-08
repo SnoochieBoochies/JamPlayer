@@ -3,6 +3,7 @@ package com.android.gm.api.comm;
 import org.apache.http.HttpEntity;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.SyncHttpClient;
@@ -21,6 +22,11 @@ public class GmHttpClient extends SyncHttpClient {
     		         //Log.i("GMHTTPCLIENT",response);
     		         res = response;
     		     }
+    		     @Override
+    		    public void onFailure(Throwable error, String content) {
+    		    	 Log.i("GMHTTPCLIENT", "onFailure()");
+    		    	 super.onFailure(error, content);
+    		    }
     		   
     	});
     	result = res;

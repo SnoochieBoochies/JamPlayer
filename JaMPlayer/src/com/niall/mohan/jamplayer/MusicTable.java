@@ -20,7 +20,7 @@ import android.util.Log;
 public class MusicTable {
 	public static final String TAG = "MediaSqlite";
 	private static final String DB_NAME = "jam_player.db";
-	private static final int DB_VERSION = 1;
+	private static final int DB_VERSION = 2;
 	public static final String TABLE_NAME = "medias";
 	public static final String _ID = "_id";
 	public static final String TITLE = "title";
@@ -48,7 +48,7 @@ public class MusicTable {
 		this.context = context;
 		dbHelper = MusicDbHelper.getInstance(context);
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
-		db.delete(TABLE_NAME, "1", null);
+		//db.delete(TABLE_NAME, "1", null);
 		//queryAll();
 		db.close();
 	}
@@ -199,7 +199,7 @@ public class MusicTable {
 		} else {
 			//mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[7]+ " like '%"+ service+"%'", null, null, null,null,null);
 			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7]+ " like '%"+service+"%'",null, null, null, null,null);
-			mCursor = db.query(true, TABLE_NAME, new String [] {_ID, ARTIST,ALBUM}, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[3], null, SELECTION[3], null);
+			mCursor = db.query(true, TABLE_NAME, new String [] {_ID, ARTIST,ALBUM, SERVICE_TYPE}, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[3], null, SELECTION[3], null);
 			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7] + " = ?",null, null, null, null,null);
 			//mCursor = db.rawQuery("SELECT _id,artist,album,title FROM "+TABLE_NAME+" WHERE service = '%"+service+"%'", null);
 		}
@@ -211,14 +211,15 @@ public class MusicTable {
 		}
 		return mCursor;
 	}
-	public Cursor getArtistsAlbumsByService(String artist) {
+	public Cursor getArtistsAlbumsByService(String service, String artist) {
 		db = dbHelper.getReadableDatabase();
 		Cursor mCursor = null;
 		if(artist == null || artist.length() == 0) {
 			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
 				     null, null, null, null, null);
 		} else {
-			mCursor = db.query(false, TABLE_NAME, new String [] {_ID,ARTIST,ALBUM}, SELECTION[3] + " like '%"+artist+"%'", null, SELECTION[2], null, SELECTION[2], null);
+			mCursor = db.query(false, TABLE_NAME, new String [] {_ID,ARTIST,ALBUM, SERVICE_TYPE}, SELECTION[3] + " like '%"+artist+"%'"+" AND "+SELECTION[6]+ " like '%"+service+"%'",
+					null, SELECTION[2], null, SELECTION[2], null);
 		}
 		if(mCursor != null) {
 			Log.i(TAG, "not null album");
@@ -228,19 +229,21 @@ public class MusicTable {
 		}
 		return mCursor;
 	}
-	public Cursor getAlbumSongs(String artist, String album) {
+	public Cursor getAlbumSongs(String service, String artist, String album) {
+		db = dbHelper.getReadableDatabase();
+		Log.i(TAG, String.valueOf(db.getPageSize()));
 		Cursor mCursor = null;
 		if(album == null || album.length() == 0) {
+			Log.i(TAG, "album null");
 			mCursor = db.query(true,TABLE_NAME, SELECTION, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[1], null, null, null);
 		} else {
-			mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[3] + " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%'", null, SELECTION[1], null, SELECTION[7], null);
+			mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[3] + " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%' AND "+SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[1], null, SELECTION[7], null);
 		}
 		if(mCursor != null) {
 			Log.i(TAG, "not null songs");
 			mCursor.moveToFirst();
 			final int count = mCursor.getCount();
 			Log.i(TAG, String.valueOf(count));
-
 		}
 		return mCursor;
 	}
@@ -267,7 +270,7 @@ public class MusicTable {
 			Log.i(TAG,"onCreate()");	
 			db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" + _ID + " INTEGER PRIMARY KEY, " +
 					 TITLE + " VARCHAR," + PATH + " VARCHAR,"+ ALBUM + " VARCHAR,"+ TRACK_NUM + " INTEGER," +  DURATION + " VARCHAR," + ARTIST + " VARCHAR," 
-					+ SERVICE_TYPE +" VARCHAR, "+TRACK_ID+" VARCHAR UNIQUE)");
+					+ SERVICE_TYPE +" VARCHAR, "+TRACK_ID+" VARCHAR)");
 		}
 		//I've made this onUpgrade so simple as columns won't really be added/removed very often at all.
 		@Override

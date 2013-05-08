@@ -75,6 +75,10 @@ public class JamSongs  implements Parcelable{
 	public void setId(String id) {
 		this.id = id;
 	}
+	@Override
+	public String toString() {
+		return this.title+" - "+this.album;
+	}
 	/*implements parceable to be able to send an arraylist of jamsongs to the service, so we can play an album etc.*/
 	@Override
 	public int describeContents() {
