@@ -25,8 +25,10 @@ import com.soundcloud.api.Token;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
@@ -44,15 +46,25 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class SoundcloudActivity extends ListActivity implements  OnClickListener {
+public class SoundcloudActivity extends ListActivity implements  OnClickListener, OnSeekBarChangeListener {
 	private static String TAG = "SoundcloudActivity";
 	ImageButton mPlayPauseButton;
 	TextView subListName; 
 	ArrayAdapter<JamSongs> adapter;
 	ProgressDialog progress;
+	SeekBar seekbar;
+	TextView currentTime;
+	TextView totalTime;
+	Intent serviceIntent;
+	Intent in;
+	long defaultPos = -1;
+	int seekMax;
+	long lastSeekTime;
 	SharedPreferences prefs;
 	ApiWrapper wrapper;
 	@Override
@@ -71,6 +83,15 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 			wrapper = new ApiWrapper(Constants.YOUR_APP_CONSUMER_KEY, Constants.YOUR_APP_CONSUMER_SECRET, 
 					Constants.REDIRECT_URI, toke);
 		else Toast.makeText(this, "Please Login to Soundcloud first.", 2000).show();
+		seekbar = (SeekBar) findViewById(R.id.progress);
+		seekbar.setOnSeekBarChangeListener(this);
+		serviceIntent = new Intent(this, JamService.class);
+		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
+		// --- set up seekbar intent for broadcasting new position to
+		// service ---
+		in = new Intent(Constants.BROADCAST_SEEKBAR);
+		currentTime = (TextView) findViewById(R.id.currenttime);
+		totalTime = (TextView) findViewById(R.id.totaltime);
 		fillData();
 	}
 	@Override
@@ -78,6 +99,21 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 		super.onResume();
 		//fillData();
 	}
+	private BroadcastReceiver receiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.i(TAG, "onReceive()");
+			int counter = intent.getIntExtra("counter", 0);
+			int mediamax = intent.getIntExtra("mediamax", 0);
+			// int seekProgress = Integer.parseInt(counter);
+			Log.i(TAG, String.valueOf(counter) + ":" + String.valueOf(mediamax));
+			seekMax = mediamax;
+			currentTime.setText(intent.getStringExtra("currentTime"));
+			totalTime.setText(intent.getStringExtra("endTime"));
+			seekbar.setMax(seekMax);
+			seekbar.setProgress(counter);
+		}
+	};
 	private void fillData() {
 		sCloudSongs= new ArrayList<JamSongs>();
 		SoundCloudSongTask sCloudTask = new SoundCloudSongTask(wrapper);
@@ -92,9 +128,9 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 		Log.i(TAG, String.valueOf(position));
 		//Intent stopIntent = new Intent(JamService.ACTION_STOP);
 		//startService(stopIntent);
-		AudioManager am = (AudioManager) SoundcloudActivity.this.getSystemService(Context.AUDIO_SERVICE);
-		if(am.isMusicActive())
-			startService(new Intent(JamService.ACTION_SKIP));
+		//AudioManager am = (AudioManager) SoundcloudActivity.this.getSystemService(Context.AUDIO_SERVICE);
+		//if(am.isMusicActive())
+		//	startService(new Intent(JamService.ACTION_PAUSE));
 		Intent intent = new Intent(JamService.ACTION_PLAY);
 		intent.putExtra("position", position);
 		intent.putParcelableArrayListExtra("albumsongs", sCloudSongs);
@@ -121,6 +157,28 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 	private void doPlayPauseButton() {
 		mPlayPauseButton.setImageDrawable(getBaseContext().getResources()
 				.getDrawable(R.drawable.playback_toggle));
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+		defaultPos = -1;
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+		lastSeekTime = 0;
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress,
+			boolean fromUser) {
+		if (fromUser) {
+			int seekPos = seekbar.getProgress();
+			Log.i(TAG, "progress: " + String.valueOf(seekPos));
+			in.putExtra("seekpos", seekPos);
+			sendBroadcast(in);
+		}
+
 	}
 	public static ArrayList<JamSongs> sCloudSongs = new ArrayList<JamSongs>();
 	public class SoundCloudSongTask extends AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
@@ -168,22 +226,14 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 					String json = reader.readLine();
 					JSONTokener tokener = new JSONTokener(json);
 					JSONArray finalResult = new JSONArray(tokener);
-					Log.i(TAG,finalResult.getString(0));
+					//Log.i(TAG,finalResult.getString(0));
 					for(int i = 0; i < finalResult.length();i++) {
 						JSONObject f = finalResult.getJSONObject(i);
 						String temp;
 						String url = (f.getString("stream_url").contains("https://")) 
 								? f.getString("stream_url").replace("https://", "http://") :f.getString("stream_url").replace("http://", "");
-						Log.i(TAG, url);
+						//Log.i(TAG, url);
 						url = url+"?client_id="+Constants.YOUR_APP_CONSUMER_KEY;
-						String artist = (f.getString("label_name").contains("-") || f.getString("label_name").contains("\"")) 
-								? f.getString("label_name") :f.getString("stream_url").replace("http://", "");
-						//if(f.getString("label_name").contains(" - ")) {
-								Log.i(TAG,String.valueOf(f.getString("label_name").indexOf("\"")));
-							//artist = f.getString("label_name").substring(0, f.getString("label_name").indexOf("-"));
-							//Log.i(TAG, "artist "+artist);
-						//}
-						//Log.i(TAG, s.streamUrl);
 						list.add(i, new JamSongs(f.getString("title"),url,"soundcloud",f.getString("label_name"),f.getString("duration"),
 								f.getString("label_name"), -1, ""));
 						//Log.i(TAG, list.get(i).getTitle());

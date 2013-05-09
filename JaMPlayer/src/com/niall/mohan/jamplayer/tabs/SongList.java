@@ -14,6 +14,7 @@ import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.niall.mohan.jamplayer.Constants;
 import com.niall.mohan.jamplayer.JamService;
 import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
@@ -72,7 +73,7 @@ public class SongList extends ListActivity implements OnClickListener,
 	boolean mBroadcastIsRegistered;
 	Intent in;
 	boolean doRetreive;
-	public static final String BROADCAST_SEEKBAR = "com.niall.mohan.jamplayer.sendseekbar";
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -90,10 +91,10 @@ public class SongList extends ListActivity implements OnClickListener,
 		seekbar = (SeekBar) findViewById(R.id.progress);
 		seekbar.setOnSeekBarChangeListener(this);
 		serviceIntent = new Intent(this, JamService.class);
-
+		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
 		// --- set up seekbar intent for broadcasting new position to
 		// service ---
-		in = new Intent(BROADCAST_SEEKBAR);
+		in = new Intent(Constants.BROADCAST_SEEKBAR);
 		currentTime = (TextView) findViewById(R.id.currenttime);
 		totalTime = (TextView) findViewById(R.id.totaltime);
 		handler = new Handler();
@@ -105,7 +106,7 @@ public class SongList extends ListActivity implements OnClickListener,
 		}
 		doRetreive = true;
 		albumName.setText(album);
-		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
+		
 	}
 
 	@Override
@@ -136,6 +137,7 @@ public class SongList extends ListActivity implements OnClickListener,
 		super.onResume();
 		doRetreive = false;
 		fillData();
+		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
 		// fillUrlData();
 	}
 
@@ -148,19 +150,18 @@ public class SongList extends ListActivity implements OnClickListener,
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.i(TAG, "onReceive()");
-			updateUI(serviceIntent);
+			int counter = intent.getIntExtra("counter", 0);
+			int mediamax = intent.getIntExtra("mediamax", 0);
+			// int seekProgress = Integer.parseInt(counter);
+			Log.i(TAG, String.valueOf(counter) + ":" + String.valueOf(mediamax));
+			seekMax = mediamax;
+			currentTime.setText(intent.getStringExtra("currentTime"));
+			totalTime.setText(intent.getStringExtra("endTime"));
+			seekbar.setMax(seekMax);
+			seekbar.setProgress(counter);
 		}
 	};
-
-	private void updateUI(Intent serviceIntent) {
-		int counter = serviceIntent.getIntExtra("counter", 0);
-		int mediamax = serviceIntent.getIntExtra("mediamax", 0);
-		// int seekProgress = Integer.parseInt(counter);
-		Log.i(TAG, String.valueOf(counter) + ":" + String.valueOf(mediamax));
-		seekMax = mediamax;
-		seekbar.setMax(seekMax);
-		seekbar.setProgress(counter);
-	}
+	
 
 	@SuppressWarnings("deprecation")
 	private void fillData() {
@@ -208,6 +209,7 @@ public class SongList extends ListActivity implements OnClickListener,
 		Log.i(TAG, "onListItemClick()");
 		Cursor c = ((SimpleCursorAdapter) l.getAdapter()).getCursor();
 		c.moveToPosition(position);
+		
 		Intent intent = new Intent(JamService.ACTION_PLAY);
 		intent.putExtra("position", position);
 		intent.putParcelableArrayListExtra("albumsongs", albumSongs);

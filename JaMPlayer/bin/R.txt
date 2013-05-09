@@ -38,12 +38,16 @@ int drawable music_pause_widget 0x7f020013
 int drawable music_play_widget 0x7f020014
 int drawable playback_toggle 0x7f020015
 int drawable playbackstart 0x7f020016
-int drawable scloud 0x7f020017
-int drawable seekbar_progress 0x7f020018
+int drawable progress_blue 0x7f020017
+int drawable progress_grey 0x7f020018
+int drawable scloud 0x7f020019
+int drawable seek_thumb_normal 0x7f02001a
+int drawable seekbar_progress 0x7f02001b
 int id album_appwidget 0x7f05000f
 int id album_name 0x7f05001d
 int id artist 0x7f050011
 int id artistalbum 0x7f050021
+int id bgProgress 0x01010000
 int id child_text 0x7f05000c
 int id connect_dropbox_btn 0x7f050018
 int id connect_gplay_btn 0x7f050017
@@ -51,7 +55,7 @@ int id connect_last_fm_btn 0x7f050019
 int id connect_scloud_btn 0x7f05001a
 int id control_play 0x7f050012
 int id control_play_btn 0x7f050009
-int id currenttime 0x7f05001e
+int id currenttime 0x7f05001f
 int id duration 0x7f050024
 int id each_song 0x7f05000e
 int id google_list 0x7f050005
@@ -78,7 +82,7 @@ int id terrain 0x7f050003
 int id text1 0x7f05001c
 int id timerDisplay 0x7f050006
 int id title 0x7f050010
-int id totaltime 0x7f05001f
+int id totaltime 0x7f05001e
 int id trackname 0x7f050020
 int id username 0x7f05000a
 int id viewpager 0x7f050023

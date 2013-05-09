@@ -159,14 +159,18 @@ containing a value of this type.
         public static final int music_play_widget=0x7f020014;
         public static final int playback_toggle=0x7f020015;
         public static final int playbackstart=0x7f020016;
-        public static final int scloud=0x7f020017;
-        public static final int seekbar_progress=0x7f020018;
+        public static final int progress_blue=0x7f020017;
+        public static final int progress_grey=0x7f020018;
+        public static final int scloud=0x7f020019;
+        public static final int seek_thumb_normal=0x7f02001a;
+        public static final int seekbar_progress=0x7f02001b;
     }
     public static final class id {
         public static final int album_appwidget=0x7f05000f;
         public static final int album_name=0x7f05001d;
         public static final int artist=0x7f050011;
         public static final int artistalbum=0x7f050021;
+        public static final int bgProgress=0x01010000;
         public static final int child_text=0x7f05000c;
         public static final int connect_dropbox_btn=0x7f050018;
         public static final int connect_gplay_btn=0x7f050017;
@@ -174,7 +178,7 @@ containing a value of this type.
         public static final int connect_scloud_btn=0x7f05001a;
         public static final int control_play=0x7f050012;
         public static final int control_play_btn=0x7f050009;
-        public static final int currenttime=0x7f05001e;
+        public static final int currenttime=0x7f05001f;
         public static final int duration=0x7f050024;
         public static final int each_song=0x7f05000e;
         public static final int google_list=0x7f050005;
@@ -201,7 +205,7 @@ containing a value of this type.
         public static final int text1=0x7f05001c;
         public static final int timerDisplay=0x7f050006;
         public static final int title=0x7f050010;
-        public static final int totaltime=0x7f05001f;
+        public static final int totaltime=0x7f05001e;
         public static final int trackname=0x7f050020;
         public static final int username=0x7f05000a;
         public static final int viewpager=0x7f050023;

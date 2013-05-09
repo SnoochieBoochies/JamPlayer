@@ -66,8 +66,8 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	
 	/*--------------------------------------*/
 	public static ArrayList<JamSongs> albumSongs;
-	private long seekPos;
-	private long maxPos;
+	private int seekPos;
+	private int maxPos;
 	Intent seekIntent;
 	private final Handler handler = new Handler();
 	private String lastFmKey;
@@ -99,7 +99,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     };
     State mState = State.Retrieving;
     boolean mStartPlayingAfterRetrieve = false; 
-    String mWhatToPlayAfterRetrieve = null;
+    JamSongs mWhatToPlayAfterRetrieve = null;
     enum PauseReason {
         UserRequest,  // paused by user request
         FocusLoss,    // paused because of audio focus loss
@@ -181,9 +181,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     	String action = intent.getAction();
     	currentListPosition = intent.getIntExtra("position", -1);
     	albumSongs = intent.getParcelableArrayListExtra("albumsongs");
-    	for(int i = 0; i < albumSongs.size(); i++) {
-    		Log.i(TAG, albumSongs.get(i).getArtist());
-    	}
+    	//Log.i(TAG, "size "+String.valueOf(albumSongs.size()));
     	if(intent.equals(null)) Log.i(TAG, "null");
 		if(action.equals(ACTION_PLAY)) processPlayRequest(currentListPosition);
 		else if(action.equals(ACTION_STOP)) processStopRequest();
@@ -194,8 +192,8 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 		else if(action.equals(ACTION_NONE)) onCreate();
     	Log.i(TAG, String.valueOf(currentListPosition));
 		
-		//registerReceiver(receiver, new IntentFilter(SongList.BROADCAST_SEEKBAR));    	
-    	//setupHandler();
+		registerReceiver(receiver, new IntentFilter(Constants.BROADCAST_SEEKBAR));    	
+    	setupHandler();
     	//processPlayRequest(currentListPosition);
     	return START_STICKY;
     }
@@ -212,7 +210,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             // ready
     		Log.i(TAG,"pos "+ String.valueOf(position));
             Log.i(TAG, albumSongs.get(position).getPath());
-            mWhatToPlayAfterRetrieve = albumSongs.get(position).getPath();
+            mWhatToPlayAfterRetrieve = albumSongs.get(position);
             mStartPlayingAfterRetrieve = true;
             return;
         }
@@ -305,22 +303,47 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 
 		}
 	};
+
 	private void LogMediaPosition() {
 		// // Log.d(TAG, "entered LogMediaPosition");
 		if (mPlayer.isPlaying()) {
 			seekPos = mPlayer.getCurrentPosition();
-			// if (mediaPosition < 1) {
-			// Toast.makeText(this, "Buffering...", Toast.LENGTH_SHORT).show();
-			// }
 			Log.i(TAG, "seekPos "+String.valueOf(seekPos));
 			maxPos = mPlayer.getDuration();
 			Log.i(TAG, "maxPos "+String.valueOf(maxPos));
+			String currentTime = makeTimers(seekPos);
+			String endTime = makeTimers(maxPos);
 			seekIntent.putExtra("counter", seekPos);
 			seekIntent.putExtra("mediamax", maxPos);
+			seekIntent.putExtra("currentTime", currentTime);
+			seekIntent.putExtra("endTime", endTime);
 			sendBroadcast(seekIntent);
 		}
 	}
-
+	private String makeTimers(int current) {
+		String endTime = "";
+	    String secondsTime = "";
+		
+		// Convert total duration into time
+	    int hours = (int)( current / (1000*60*60));
+	    int minutes = (int)(current % (1000*60*60)) / (1000*60);
+	    int seconds = (int) ((current % (1000*60*60)) % (1000*60) / 1000);
+	    // Add hours if there
+	    if(hours > 0){
+	    	endTime = hours + ":";
+	    }
+	    // Prepending 0 to seconds if it is one digit
+	    if(seconds < 10){
+	    	secondsTime= "0" + seconds;
+	    }else{
+	    	secondsTime= "" + seconds;
+	    }
+	    endTime = endTime + minutes + ":" + secondsTime;
+	 
+	        // return timer string
+	    return endTime;
+	    
+	}
 
     /**
      * Releases resources used by the service for playback. This includes the "foreground service"
@@ -446,8 +469,10 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         int now = (int) (System.currentTimeMillis() / 1000);
         ScrobbleResult result = Track.scrobble(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), now, session);
     	int newPos = currentListPosition+1;
+    	Log.i(TAG, String.valueOf(newPos));
+    	Log.i(TAG, albumSongs.get(newPos).getPath());
     	if(newPos < albumSongs.size())
-    		playNextSong(albumSongs.get(newPos).getPath());
+    		playNextSong(albumSongs.get(currentListPosition++).getPath());
     	else {
     		player.stop();
     	}
@@ -551,7 +576,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         // If the flag indicates we should start playing after retrieving, let's do that now.
         if (mStartPlayingAfterRetrieve) {
             tryToGetAudioFocus();
-            playNextSong(mWhatToPlayAfterRetrieve.toString());
+            playNextSong(mWhatToPlayAfterRetrieve.getPath());
         }
     }
 
