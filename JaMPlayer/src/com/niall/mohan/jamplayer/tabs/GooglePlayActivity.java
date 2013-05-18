@@ -44,10 +44,11 @@ public class GooglePlayActivity extends ExpandableListActivity {
 			currentAlbumId = savedInstanceState.getString("selectedalbumid");
 
 		}
-		setContentView(R.layout.local_tab_layout);
+		setContentView(R.layout.tab_content_layout);
 		db = new MusicTable(this);
 		db.open();
 		fillData();
+		//if music is playing, make the footer banner to go to now playing activity.
 	}
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {

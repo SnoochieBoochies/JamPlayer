@@ -235,7 +235,7 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 						//Log.i(TAG, url);
 						url = url+"?client_id="+Constants.YOUR_APP_CONSUMER_KEY;
 						list.add(i, new JamSongs(f.getString("title"),url,"soundcloud",f.getString("label_name"),f.getString("duration"),
-								f.getString("label_name"), -1, ""));
+								f.getString("label_name"), -1, "", f.getString("artwork_url")));
 						//Log.i(TAG, list.get(i).getTitle());
 						//Log.i(TAG,d[i]);
 					}

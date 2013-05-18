@@ -10,8 +10,6 @@ import android.util.Log;
 
 public class WriteToCache {
 	private static final String name = "JaM Music";
-	public static final int cacheSize = 10;
-	public static File [] cacheBuffer = new File [cacheSize]; // this is the original buffer we write to, should be File. For scloud, need to check if downloadable = true; dropbox is ok. Google dl doesn't work.
 	public boolean isExternalStorageWritable() {
 	    String state = Environment.getExternalStorageState();
 	    if (Environment.MEDIA_MOUNTED.equals(state)) {
@@ -44,5 +42,6 @@ public class WriteToCache {
 			return null;
 		}
 	} 
+
 
 }

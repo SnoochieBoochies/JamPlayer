@@ -26,7 +26,7 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener,Vie
 		setContentView(R.layout.tabmain);
 		if (savedInstanceState != null) {
             //mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab")); //set the tab as per the saved state
-            mTabHost.getTabWidget().getChildAt(0).getLayoutParams().width =(int) 30;
+            //mTabHost.getTabWidget().getChildAt(0).getLayoutParams().width =(int) 30;
         }
 		createTabs();
 	}

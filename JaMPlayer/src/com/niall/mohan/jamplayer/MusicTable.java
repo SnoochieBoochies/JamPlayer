@@ -20,7 +20,7 @@ import android.util.Log;
 public class MusicTable {
 	public static final String TAG = "MediaSqlite";
 	private static final String DB_NAME = "jam_player.db";
-	private static final int DB_VERSION = 2;
+	private static final int DB_VERSION = 1;
 	public static final String TABLE_NAME = "medias";
 	public static final String _ID = "_id";
 	public static final String TITLE = "title";
@@ -29,7 +29,7 @@ public class MusicTable {
 	public static final String ARTIST = "artist";
 	public static final String PATH = "uri";
 	public static final String DURATION = "duration";
-	public static final String ARTWORK_URI = "";
+	public static final String ARTWORK_URI = "artwork";
 	public static final String SERVICE_TYPE = "service";
 	public static final String TRACK_ID = "trackid";
 	private static String service;
@@ -42,7 +42,8 @@ public class MusicTable {
 	};
 	public static String [] SELECTION = new String [] {
 		_ID, TITLE, ALBUM, ARTIST, PATH,
-		DURATION, SERVICE_TYPE, TRACK_NUM, TRACK_ID};
+		DURATION, SERVICE_TYPE, TRACK_NUM, TRACK_ID, ARTWORK_URI
+	};
 
 	public MusicTable(Context context) {
 		this.context = context;
@@ -101,7 +102,7 @@ public class MusicTable {
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
 			JamSongs mediaInfo =new JamSongs(cursor.getString(1),cursor.getString(4),cursor.getString(6), cursor.getString(2), cursor.getString(5), cursor.getString(3),
-					cursor.getInt(7), cursor.getString(8));
+					cursor.getInt(7), cursor.getString(8), cursor.getString(9));
 			medias.add(mediaInfo);
 			//Log.i("LIST: ", String.valueOf(medias.get(i)._cloud));
 			cursor.moveToNext();
@@ -111,25 +112,7 @@ public class MusicTable {
 		database.close();
 		return medias;
 	}
-	public List<String> query(String[] projection) {
-		SQLiteDatabase database = dbHelper.getReadableDatabase();
-		ArrayList<String> playlists = new ArrayList<String>();
-		Cursor cursor = database.query(TABLE_NAME,
-				projection, null, null, null, null, null);
-		if (cursor == null)
-			return null;
-		cursor.moveToFirst();
-		final int count = cursor.getCount();
-		for (int i = 0; i < count; i++) {
-			String father = cursor.getString(0);
-			playlists.add(father);
-			cursor.moveToNext();
-		}
-		cursor.close();
-		database.close();
-		MediaUtils.unduplicate(playlists);
-		return playlists;
-	}
+
 	public Cursor query(String value, int cmd, String service) {
 		SQLiteDatabase database = dbHelper.getReadableDatabase();
 		String clause;
@@ -154,25 +137,7 @@ public class MusicTable {
 		// database.close();
 		return cursor;
 	}
-	public void deleteByName(String name, int cmd) {
-		SQLiteDatabase database = dbHelper.getWritableDatabase();
-		String clause;
-		switch (cmd) {
-		case 0:
-			clause = TITLE;
-			break;
-		case 1:
-			clause = ALBUM;
-			break;
-		case 2:
-			clause = ARTIST;
-		default:
-			return;
-		}
-		database.delete(TABLE_NAME, clause + " = ?",
-				new String[] { name });
-		database.close();
-	}
+
 	private ContentValues setInfo(JamSongs mediaInfo) {
 		ContentValues values = new ContentValues();
 		values.put(TITLE, mediaInfo.getTitle());
@@ -183,7 +148,7 @@ public class MusicTable {
 		values.put(SERVICE_TYPE, mediaInfo.getService());
 		values.put(TRACK_NUM, mediaInfo.getTrackNum());
 		values.put(TRACK_ID, mediaInfo.getId());
-		//values.put(MusicDbHelper.PLAYLIST, mediaInfo._playlist);
+		values.put(ARTWORK_URI, mediaInfo.getArtwork());
 		return values;
 	}
 
@@ -197,11 +162,7 @@ public class MusicTable {
 			mCursor = db.query(TABLE_NAME, MEDIA_PROJECTION, 
 				     null, null, null, null, null);
 		} else {
-			//mCursor = db.query(true, TABLE_NAME, SELECTION, SELECTION[7]+ " like '%"+ service+"%'", null, null, null,null,null);
-			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7]+ " like '%"+service+"%'",null, null, null, null,null);
 			mCursor = db.query(true, TABLE_NAME, new String [] {_ID, ARTIST,ALBUM, SERVICE_TYPE}, SELECTION[6]+ " like '%"+service+"%'", null, SELECTION[3], null, SELECTION[3], null);
-			//mCursor = db.query(true,TABLE_NAME, new String [] {_ID,ARTIST},  SELECTION[7] + " = ?",null, null, null, null,null);
-			//mCursor = db.rawQuery("SELECT _id,artist,album,title FROM "+TABLE_NAME+" WHERE service = '%"+service+"%'", null);
 		}
 		if(mCursor != null) {
 			Log.i(TAG, "not null");
@@ -247,6 +208,17 @@ public class MusicTable {
 		}
 		return mCursor;
 	}
+	public String getArtwork(String service, String artist, String album, String song) {
+		db = dbHelper.getReadableDatabase();
+		Cursor mCursor = null;
+		mCursor = db.query(true, TABLE_NAME, new String [] {_ID,ARTWORK_URI,SERVICE_TYPE}, SELECTION[6]+" like '%"+service+"%' AND "+SELECTION[3]
+				+ " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%' AND "+ SELECTION[1]+" like '%"+song+"%'", null, null, null, null, null);
+		if(mCursor != null) {
+			mCursor.moveToFirst();
+			Log.i(TAG,mCursor.getString(mCursor.getColumnIndex(ARTWORK_URI)));
+		}
+		return "";
+	}
 	private static class MusicDbHelper extends SQLiteOpenHelper {
 
 		private Context context;
@@ -270,7 +242,7 @@ public class MusicTable {
 			Log.i(TAG,"onCreate()");	
 			db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" + _ID + " INTEGER PRIMARY KEY, " +
 					 TITLE + " VARCHAR," + PATH + " VARCHAR,"+ ALBUM + " VARCHAR,"+ TRACK_NUM + " INTEGER," +  DURATION + " VARCHAR," + ARTIST + " VARCHAR," 
-					+ SERVICE_TYPE +" VARCHAR, "+TRACK_ID+" VARCHAR)");
+					+ SERVICE_TYPE +" VARCHAR, "+TRACK_ID+" VARCHAR, "+ ARTWORK_URI+" VARCHAR)");
 		}
 		//I've made this onUpgrade so simple as columns won't really be added/removed very often at all.
 		@Override

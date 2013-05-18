@@ -4,17 +4,18 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class JamSongs  implements Parcelable{
-	public String title; // media title
-	public String path; // media path
-	public String album; // media album
-	public String playlist; // media path
-	public String duration; // media duration
-	public String artist; // media artist
-	public String display_name;
-	public String service;
-	public int trackNum;
-	public String id;
-	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum, String id) {
+	private String title; // media title
+	private String path; // media path
+	private String album; // media album
+	private String playlist; // media path
+	private String duration; // media duration
+	private String artist; // media artist
+	private String display_name;
+	private String service;
+	private int trackNum;
+	private String id;
+	private String artworkUri;
+	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum, String id, String artworkUri) {
 		this.title = title;
 		this.path = path;
 		this.service = service;
@@ -23,6 +24,7 @@ public class JamSongs  implements Parcelable{
 		this.duration = duration;
 		this.trackNum = trackNum;
 		this.id = id;
+		this.artworkUri = artworkUri;
 	}
 	public JamSongs() {};
 
@@ -51,6 +53,9 @@ public class JamSongs  implements Parcelable{
 	public String getId() {
 		return id;
 	}
+	public String getArtwork() {
+		return artworkUri;
+	}
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -75,6 +80,9 @@ public class JamSongs  implements Parcelable{
 	public void setId(String id) {
 		this.id = id;
 	}
+	public void setArtwork(String artworkUri) {
+		this.artworkUri = artworkUri;
+	}
 	@Override
 	public String toString() {
 		return this.title+" - "+this.album;
@@ -94,6 +102,7 @@ public class JamSongs  implements Parcelable{
 		dest.writeString(artist);
 		dest.writeInt(trackNum);
 		dest.writeString(id);
+		dest.writeString(artworkUri);
 	}
 	public static final Parcelable.Creator<JamSongs> CREATOR = new Creator<JamSongs>() {
 		@Override
@@ -115,5 +124,6 @@ public class JamSongs  implements Parcelable{
 		artist = source.readString();
 		trackNum = source.readInt();
 		id = source.readString();
+		artworkUri = source.readString();
 	}
 }

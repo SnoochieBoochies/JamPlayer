@@ -9,6 +9,13 @@ import org.json.JSONException;
 
 import com.android.gm.api.GoogleMusicApi;
 import com.android.gm.api.model.Song;
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.DropboxLink;
+import com.dropbox.client2.DropboxAPI.Entry;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.exception.DropboxException;
+import com.dropbox.client2.session.AccessTokenPair;
+import com.dropbox.client2.session.AppKeyPair;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
@@ -24,18 +31,28 @@ import com.niall.mohan.jamplayer.adapters.JamSongs;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.ImageSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -43,6 +60,7 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView.BufferType;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,7 +80,7 @@ public class SongList extends ListActivity implements OnClickListener,
 	Handler handler;
 	Cursor songCursor;
 	SimpleCursorAdapter adapter;
-	ArrayList<JamSongs> albumSongs;
+	public ArrayList<JamSongs> albumSongs;
 	SharedPreferences prefs;
 	long lastSeekTime;
 	long defaultPos = -1;
@@ -73,7 +91,7 @@ public class SongList extends ListActivity implements OnClickListener,
 	boolean mBroadcastIsRegistered;
 	Intent in;
 	boolean doRetreive;
-	
+	public DropboxAPI<AndroidAuthSession> mApi;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -84,25 +102,31 @@ public class SongList extends ListActivity implements OnClickListener,
 		service = intent.getStringExtra("service");
 		Log.i(TAG, artist + "/" + album);
 		setContentView(R.layout.song_list);
+		/*
 		mPlayPauseButton = (ImageButton) findViewById(R.id.control_play_btn);
 		mPlayPauseButton.setOnClickListener(this);
+		*/
 		albumName = (TextView) findViewById(R.id.album_name);
 		albumName.setOnClickListener(this);
+		/*
 		seekbar = (SeekBar) findViewById(R.id.progress);
 		seekbar.setOnSeekBarChangeListener(this);
 		serviceIntent = new Intent(this, JamService.class);
 		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
 		// --- set up seekbar intent for broadcasting new position to
-		// service ---
 		in = new Intent(Constants.BROADCAST_SEEKBAR);
 		currentTime = (TextView) findViewById(R.id.currenttime);
 		totalTime = (TextView) findViewById(R.id.totaltime);
 		handler = new Handler();
+		*/
 		db = new MusicTable(this);
 		db.open();
 		fillData();
 		if (service.equals("google")) {
 			fillUrlData();
+		} else if(service.equals("dropbox")) {
+			buildDbSess();
+			fillDbUrlData();
 		}
 		doRetreive = true;
 		albumName.setText(album);
@@ -137,7 +161,7 @@ public class SongList extends ListActivity implements OnClickListener,
 		super.onResume();
 		doRetreive = false;
 		fillData();
-		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
+		//registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
 		// fillUrlData();
 	}
 
@@ -145,18 +169,21 @@ public class SongList extends ListActivity implements OnClickListener,
 	protected void onDestroy() {
 		super.onDestroy();
 	}
-
+	@Override
+	protected void onPause() {
+		super.onPause();
+		//unregisterReceiver(receiver);
+	}
+	
 	private BroadcastReceiver receiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.i(TAG, "onReceive()");
 			int counter = intent.getIntExtra("counter", 0);
 			int mediamax = intent.getIntExtra("mediamax", 0);
-			// int seekProgress = Integer.parseInt(counter);
-			Log.i(TAG, String.valueOf(counter) + ":" + String.valueOf(mediamax));
 			seekMax = mediamax;
 			currentTime.setText(intent.getStringExtra("currentTime"));
-			totalTime.setText(intent.getStringExtra("endTime"));
+			totalTime.setText("/"+intent.getStringExtra("endTime"));
 			seekbar.setMax(seekMax);
 			seekbar.setProgress(counter);
 		}
@@ -176,7 +203,7 @@ public class SongList extends ListActivity implements OnClickListener,
 							.getString(4), songCursor.getString(6), songCursor
 							.getString(2), songCursor.getString(5), songCursor
 							.getString(3), songCursor.getInt(7), songCursor
-							.getString(8)));
+							.getString(8),songCursor.getString(9)));
 			songCursor.moveToNext();
 		}
 
@@ -188,6 +215,24 @@ public class SongList extends ListActivity implements OnClickListener,
 
 	private void fillUrlData() {
 		RetreiveGoogleUrl urlTask = new RetreiveGoogleUrl(SongList.this) {
+			@Override
+			protected void onPostExecute(ArrayList<JamSongs> result) {
+				albumSongs = result;
+
+				super.onPostExecute(result);
+				progress.dismiss();
+			}
+		};
+		urlTask.execute(albumSongs);
+		adapter = new SimpleCursorAdapter(this, R.layout.list_child_item,
+				songCursor, new String[] { MusicTable.TITLE },
+				new int[] { R.id.child_text });
+		setListAdapter(adapter);
+		db.close();
+		doRetreive = false;
+	}
+	private void fillDbUrlData() {
+		RetreiveDropboxUrls urlTask = new RetreiveDropboxUrls() {
 			@Override
 			protected void onPostExecute(ArrayList<JamSongs> result) {
 				albumSongs = result;
@@ -203,20 +248,21 @@ public class SongList extends ListActivity implements OnClickListener,
 		db.close();
 		doRetreive = false;
 	}
-
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		Log.i(TAG, "onListItemClick()");
 		Cursor c = ((SimpleCursorAdapter) l.getAdapter()).getCursor();
 		c.moveToPosition(position);
-		
-		Intent intent = new Intent(JamService.ACTION_PLAY);
-		intent.putExtra("position", position);
-		intent.putParcelableArrayListExtra("albumsongs", albumSongs);
-		startService(intent);
+		Log.i(TAG, c.getString(c.getColumnIndex("title")));
+		Uri uri = Uri.parse("content://media/external/audio/albumart");
+		Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
+		play.putExtra("songTitle", c.getString(c.getColumnIndex("title")));
+		play.putExtra("position", position);
+		play.putParcelableArrayListExtra("albumsongs", albumSongs);
+		startActivity(play);
 		
 		mBroadcastIsRegistered = true;
-		doPlayPauseButton();
+		//doPlayPauseButton();
 		super.onListItemClick(l, v, position, id);
 
 	}
@@ -241,11 +287,11 @@ public class SongList extends ListActivity implements OnClickListener,
 				// ...Handled toggle on
 			}
 		} else if (v == albumName) {
-			Intent intent = new Intent(JamService.ACTION_PLAY);
-			intent.putExtra("position", 0);
-			intent.putParcelableArrayListExtra("albumsongs", albumSongs);
-			startService(intent);
-			doPlayPauseButton();
+			Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
+			play.putExtra("position", 0);
+			play.putParcelableArrayListExtra("albumsongs", albumSongs);
+			startActivity(play);
+			//doPlayPauseButton();
 		}
 	}
 
@@ -271,16 +317,7 @@ public class SongList extends ListActivity implements OnClickListener,
 
 	}
 
-	/*
-	 * private ServiceConnection mConnection = new ServiceConnection() {
-	 * 
-	 * @Override public void onServiceDisconnected(ComponentName name) {
-	 * servBound = false; }
-	 * 
-	 * @Override public void onServiceConnected(ComponentName name, IBinder
-	 * service) { JamBinder binder = (JamBinder) service; mService =
-	 * binder.getService(); servBound = true; } };
-	 */
+
 	public class RetreiveGoogleUrl extends
 			AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
 		private static final String TAG2 = "RetreiveGoogleUrl";
@@ -306,7 +343,7 @@ public class SongList extends ListActivity implements OnClickListener,
 			Log.i(TAG, "EMAIL FIRST" + em);
 			ArrayList<JamSongs> list = params[0];
 			for (int i = 0; i < list.size(); i++) {
-				SongAdapter temp = new SongAdapter(list.get(i));
+				GoogleAdapter temp = new GoogleAdapter(list.get(i));
 				Song s = temp.setMediaInfo(list.get(i)); // convert to google song and make url
 				Log.i(TAG2, s.getId());
 				try {
@@ -317,10 +354,8 @@ public class SongList extends ListActivity implements OnClickListener,
 					list.get(i).setPath(String.valueOf(songURL));
 					Log.i(TAG2, list.get(i).getPath());
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (Exception e) {
 					try {
@@ -372,10 +407,10 @@ public class SongList extends ListActivity implements OnClickListener,
 			super.onPreExecute();
 		}
 
-		private class SongAdapter extends Song {
+		private class GoogleAdapter extends Song {
 			JamSongs song;
 
-			public SongAdapter(JamSongs song) {
+			public GoogleAdapter(JamSongs song) {
 				this.song = song;
 			}
 
@@ -390,6 +425,43 @@ public class SongList extends ListActivity implements OnClickListener,
 				return mediaInfo;
 			}
 		}
+	}
+	private void buildDbSess() {
+		prefs = getSharedPreferences(Constants.ACCOUNT_PREFS_NAME, 0);
+		String key = prefs.getString(Constants.ACCESS_KEY_NAME, null);
+		String secret = prefs.getString(Constants.ACCESS_SECRET_NAME, null);
+		Log.i(TAG, key);
+		Log.i(TAG, secret);
+		AppKeyPair appKeyPair = new AppKeyPair(Constants.APP_KEY, Constants.APP_SECRET);
+		AccessTokenPair accessToken = new AccessTokenPair(key, secret);
+        AndroidAuthSession session = new AndroidAuthSession(appKeyPair, Constants.ACCESS_TYPE, accessToken);
+		mApi = new DropboxAPI<AndroidAuthSession>(session);
+	}
+	public class RetreiveDropboxUrls extends AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
+		private static final String TAG4 = "RetreiveDropboxUrls";
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			progress = ProgressDialog.show(SongList.this, "", "Loading Album...",
+					true);
+		}
+		@Override
+		protected ArrayList<JamSongs> doInBackground(ArrayList<JamSongs>... params) {
+			Log.i(TAG4, "doInBackground()");
+			ArrayList<JamSongs> songs = params[0];
+			try {
+				JamSongs tempSong;
+	            for(int i = 0; i < songs.size(); i++) {
+	            	DropboxLink url = mApi.media(songs.get(i).getPath(), false);
+	            	//Log.i(TAG, url.url);
+	            	songs.get(i).setPath(url.url);	
+	            }
+			} catch(DropboxException e) {
+				e.printStackTrace();
+			}
+			return songs;
+		}
+		
 	}
 
 }

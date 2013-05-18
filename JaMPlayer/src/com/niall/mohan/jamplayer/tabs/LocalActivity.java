@@ -55,7 +55,7 @@ public class LocalActivity extends ExpandableListActivity {
 			currentAlbumId = savedInstanceState.getString("selectedalbumid");
 			currentService = savedInstanceState.getString("selectedservice");
 		}
-		setContentView(R.layout.local_tab_layout);
+		setContentView(R.layout.tab_content_layout);
 		db = new MusicTable(this);
 		db.open();
 		fillData();
