@@ -186,6 +186,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 									Editor writer = preferences.edit();
 									writer.putString("SCloud_Access_Key", access);
 									writer.commit();
+									connectSCloud.setText("Unlink from Soundcloud");
 								} catch (OperationCanceledException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -250,6 +251,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 						writer.commit();
 						writer.putString("LastFm_User", session.getUsername());
 						writer.commit();
+						connectLastFm.setText("Unlink from Last.fm");
 					} else {
 						showToast("Login Failed, try again.");
 					}
@@ -272,6 +274,13 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 		connectDropb = (Button)findViewById(R.id.connect_dropbox_btn);
 		connectSCloud = (Button)findViewById(R.id.connect_scloud_btn);
 		connectLastFm = (Button)findViewById(R.id.connect_last_fm_btn);
+		if(savedInstanceState != null) {
+			connectGplay.setText(savedInstanceState.getString("gplay"));
+			connectDropb.setText(savedInstanceState.getString("dropbox"));
+			connectLastFm.setText(savedInstanceState.getString("lastfm"));
+			connectSCloud.setText(savedInstanceState.getString("scloud"));
+			
+		}
 		progress = (ProgressBar) findViewById(R.id.progress);
 		AndroidAuthSession session = buildSession();
         mApi = new DropboxAPI<AndroidAuthSession>(session);
@@ -292,8 +301,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
                     // Start the remote authentication
 					mApi.getSession().startAuthentication(SettingsActivity.this);
                 }
-				
-	            
 			}
 			
 		});
@@ -312,6 +319,26 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 			}
 		});
 		
+	}
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		Log.i(TAG, "onSaveInstanceState()");
+		super.onSaveInstanceState(outState);
+		outState.putString("gplay", connectGplay.getText().toString());
+		outState.putString("dropbox", connectDropb.getText().toString());
+		outState.putString("lastfm", connectLastFm.getText().toString());
+		outState.putString("scloud", connectSCloud.getText().toString());
+	}
+	@Override
+	public void onBackPressed() {
+		super.onBackPressed();
+		preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		Editor writer = preferences.edit();
+		writer.putString("gplay", connectGplay.getText().toString());
+		writer.putString("dropbox", connectDropb.getText().toString());
+		writer.putString("lastfm", connectLastFm.getText().toString());
+		writer.putString("scloud", connectSCloud.getText().toString());
+		writer.commit();
 	}
 	/*------Catch all method to push songs into the DB from dropbox--------------*/
 	void pushToDb(JamSongs song) {

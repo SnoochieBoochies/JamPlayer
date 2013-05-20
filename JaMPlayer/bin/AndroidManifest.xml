@@ -38,7 +38,7 @@
         </activity>
         <activity 
             android:name="com.niall.mohan.jamplayer.tabs.LocalActivity"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity" android:launchMode="singleTask"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.DropboxActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity"></activity>
 		<activity android:name="com.niall.mohan.jamplayer.tabs.SongList"></activity>
@@ -63,7 +63,9 @@
                 <action android:name="com.niall.mohan.jamplayer.action.PAUSE" />
                 <action android:name="com.niall.mohan.jamplayer.action.STOP"/>
                 <action android:name="com.niall.mohan.jamplayer.action.NONE" />
+                <action android:name="com.niall.mohan.jamplayer.action.SEEK" />
                 <action android:name="com.niall.mohan.jamplayer.action.SKIP" />
+                <action android:name="com.niall.mohan.jamplayer.action.NOW_PLAYING"/>
             </intent-filter>
 	</service>
 	<receiver android:name=".PlaybackIntentReceiver">

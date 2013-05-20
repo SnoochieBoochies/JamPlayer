@@ -31,10 +31,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.Menu;
@@ -44,6 +47,7 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -51,7 +55,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class SoundcloudActivity extends ListActivity implements  OnClickListener, OnSeekBarChangeListener {
+public class SoundcloudActivity extends ListActivity implements  OnClickListener {
 	private static String TAG = "SoundcloudActivity";
 	ImageButton mPlayPauseButton;
 	TextView subListName; 
@@ -67,12 +71,13 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 	long lastSeekTime;
 	SharedPreferences prefs;
 	ApiWrapper wrapper;
+	ImageButton nowPlayingArtBtn;
+	Button nowPlayingTitleBtn;
+	View border;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.song_list);
-		mPlayPauseButton = (ImageButton) findViewById(R.id.control_play_btn);
-		mPlayPauseButton.setOnClickListener(this);
 		subListName = (TextView) findViewById(R.id.album_name); //called this as we reuse the xml file. less bloat
 		subListName.setText("Following Tracks");
 		prefs = PreferenceManager.getDefaultSharedPreferences(SoundcloudActivity.this);
@@ -82,16 +87,10 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 		if(!toke.access.equals("null"))
 			wrapper = new ApiWrapper(Constants.YOUR_APP_CONSUMER_KEY, Constants.YOUR_APP_CONSUMER_SECRET, 
 					Constants.REDIRECT_URI, toke);
-		else Toast.makeText(this, "Please Login to Soundcloud first.", 2000).show();
-		seekbar = (SeekBar) findViewById(R.id.progress);
-		seekbar.setOnSeekBarChangeListener(this);
-		serviceIntent = new Intent(this, JamService.class);
-		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
-		// --- set up seekbar intent for broadcasting new position to
-		// service ---
-		in = new Intent(Constants.BROADCAST_SEEKBAR);
-		currentTime = (TextView) findViewById(R.id.currenttime);
-		totalTime = (TextView) findViewById(R.id.totaltime);
+		else  {
+			Toast.makeText(this, "Please Login to Soundcloud first.", 2000).show();
+			return;
+		}
 		fillData();
 	}
 	@Override
@@ -119,67 +118,55 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 		SoundCloudSongTask sCloudTask = new SoundCloudSongTask(wrapper);
 		sCloudTask.execute(sCloudSongs);
 		
-		adapter = new ArrayAdapter<JamSongs>(this, R.layout.list_child_item, sCloudSongs);
+		adapter = new ArrayAdapter<JamSongs>(getApplicationContext(), R.layout.list_child_item, R.id.child_text, sCloudSongs);
 		setListAdapter(adapter);
 	}
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		Log.i(TAG, "onListItemClick()");
-		Log.i(TAG, String.valueOf(position));
-		//Intent stopIntent = new Intent(JamService.ACTION_STOP);
-		//startService(stopIntent);
-		//AudioManager am = (AudioManager) SoundcloudActivity.this.getSystemService(Context.AUDIO_SERVICE);
-		//if(am.isMusicActive())
-		//	startService(new Intent(JamService.ACTION_PAUSE));
-		Intent intent = new Intent(JamService.ACTION_PLAY);
-		intent.putExtra("position", position);
-		intent.putParcelableArrayListExtra("albumsongs", sCloudSongs);
-		startService(intent);
-		doPlayPauseButton();
+		ArrayAdapter c = ((ArrayAdapter) l.getAdapter());
+		Log.i(TAG, String.valueOf(c.getItem(position)));
+		Uri uri = Uri.parse("content://media/external/audio/albumart");
+		Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
+		play.putExtra("songTitle", String.valueOf(c.getItem(position)));
+		play.putExtra("position", position);
+		play.putParcelableArrayListExtra("albumsongs", sCloudSongs);
+		startActivity(play);
+		//Intent intent = new Intent(JamService.ACTION_PLAY);
+		//intent.putExtra("position", position);
+		//intent.putParcelableArrayListExtra("albumsongs", sCloudSongs);
+		//startService(intent);
+		//doPlayPauseButton();
 		super.onListItemClick(l, v, position, id);
 	}
+	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.i(TAG, "onReceiver scloud");
+			Log.i(TAG, intent.getStringExtra("title"));
+			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
+			nowPlayingArtBtn.setVisibility(View.VISIBLE);
+			Bitmap bm = intent.getParcelableExtra("art");
+			nowPlayingArtBtn.setImageBitmap(Bitmap.createScaledBitmap(bm, 120, 80, false));
+			nowPlayingArtBtn.setOnClickListener(SoundcloudActivity.this);
+			nowPlayingArtBtn.setVisibility(View.VISIBLE);
+			nowPlayingTitleBtn = (Button) findViewById(R.id.art_text);
+			nowPlayingTitleBtn.setText(intent.getStringExtra("title"));
+			nowPlayingTitleBtn.setVisibility(View.VISIBLE);
+			nowPlayingTitleBtn.setOnClickListener(SoundcloudActivity.this);
+			border = (View) findViewById(R.id.border);
+			border.setVisibility(View.VISIBLE);
+		}
+	};
 	@Override
 	public void onClick(View v) {
-		if (v == mPlayPauseButton) {
-			if (v.isSelected()) {
-				v.setSelected(false);
-				startService(new Intent(JamService.ACTION_PLAY));
-				doPlayPauseButton();
-				// ...Handle toggle off
-			} else {
-				v.setSelected(true);
-				doPlayPauseButton();
-				startService(new Intent(JamService.ACTION_PAUSE));
-				// ...Handled toggle on
-			}
+		if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
+			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			startActivity(intent);
 		}
 	}
-	private void doPlayPauseButton() {
-		mPlayPauseButton.setImageDrawable(getBaseContext().getResources()
-				.getDrawable(R.drawable.playback_toggle));
-	}
 
-	@Override
-	public void onStopTrackingTouch(SeekBar seekBar) {
-		defaultPos = -1;
-	}
-
-	@Override
-	public void onStartTrackingTouch(SeekBar seekBar) {
-		lastSeekTime = 0;
-	}
-
-	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress,
-			boolean fromUser) {
-		if (fromUser) {
-			int seekPos = seekbar.getProgress();
-			Log.i(TAG, "progress: " + String.valueOf(seekPos));
-			in.putExtra("seekpos", seekPos);
-			sendBroadcast(in);
-		}
-
-	}
 	public static ArrayList<JamSongs> sCloudSongs = new ArrayList<JamSongs>();
 	public class SoundCloudSongTask extends AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
 		SoundcloudActivity activity;
@@ -202,6 +189,7 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 			Log.i(TAG,String.valueOf(sCloudSongs.size()));
 			adapter = new ArrayAdapter<JamSongs>(SoundcloudActivity.this, R.layout.list_child_item, sCloudSongs);
 			setListAdapter(adapter);
+			LocalBroadcastManager.getInstance(SoundcloudActivity.this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
 			super.onPostExecute(result);
 		}
 		@Override
@@ -235,7 +223,7 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 						//Log.i(TAG, url);
 						url = url+"?client_id="+Constants.YOUR_APP_CONSUMER_KEY;
 						list.add(i, new JamSongs(f.getString("title"),url,"soundcloud",f.getString("label_name"),f.getString("duration"),
-								f.getString("label_name"), -1, "", f.getString("artwork_url")));
+								f.getString("label_name"), -1, "", f.getString("artwork_url"),0));
 						//Log.i(TAG, list.get(i).getTitle());
 						//Log.i(TAG,d[i]);
 					}

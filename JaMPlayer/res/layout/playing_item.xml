@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/blue_bg" >
+
+   	<TextView
+   	    android:id="@+id/song_name"
+   	    android:layout_width="fill_parent"
+   	    android:layout_height="60dp"
+   	    android:gravity="bottom"
+   	    android:layout_alignParentLeft="true"
+   	    android:layout_alignParentTop="true"
+   	    android:paddingLeft="20dp"
+   	    android:paddingTop="5dp"
+   	    android:text="Song Name"
+   	    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <ImageView
+        android:id="@+id/album_art"
+        android:layout_width="wrap_content"
+        android:layout_height="226dp"
+        android:layout_above="@+id/progress"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/song_name"
+        android:layout_weight="0.41"
+        android:src="@drawable/dummy_album_art" />
+
+     <ImageButton
+	        android:id="@+id/control_play_btn"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentBottom="true"
+	        android:layout_centerHorizontal="true"
+	        android:background="@android:color/transparent"
+	        android:padding="@dimen/play_btn_pad"
+	        android:src="@drawable/ic_appwidget_music_play" />
+
+	    <SeekBar
+	        android:id="@+id/progress"
+	        android:layout_width="wrap_content"
+	        android:layout_height="30dip"
+	        android:layout_above="@+id/control_play_btn"
+	        android:layout_alignParentLeft="true"
+	        android:layout_alignParentRight="true"
+	        android:paddingBottom="8dip"
+	        android:paddingLeft="8dip"
+	        android:paddingRight="8dip"
+	        android:progressDrawable="@drawable/seekbar_progress"
+	        android:thumb="@drawable/seek_thumb_normal" />
+
+	    <TextView
+	        android:id="@+id/totaltime"
+	        android:layout_width="60dip"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentBottom="true"
+	        android:layout_alignParentRight="true"
+	        android:layout_alignTop="@+id/control_play_btn"
+	        android:layout_toRightOf="@+id/control_play_btn"
+	        android:layout_weight="1"
+	        android:gravity="right"
+	        android:paddingRight="5dip"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textSize="14sp"
+	        android:textStyle="bold" />
+
+	    <TextView
+	        android:id="@+id/currenttime"
+	        android:layout_width="20dip"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentBottom="true"
+	        android:layout_alignParentLeft="true"
+	        android:layout_below="@+id/progress"
+	        android:layout_toLeftOf="@+id/control_play_btn"
+	        android:paddingLeft="5dip"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textSize="14sp"
+	        android:textStyle="bold" />
+
+
+</RelativeLayout>

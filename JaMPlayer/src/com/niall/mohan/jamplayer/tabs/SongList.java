@@ -25,6 +25,7 @@ import com.niall.mohan.jamplayer.Constants;
 import com.niall.mohan.jamplayer.JamService;
 import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.SettingsActivity;
 import com.niall.mohan.jamplayer.adapters.GPlaySongAdapter;
 import com.niall.mohan.jamplayer.adapters.JamSongs;
 
@@ -42,11 +43,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -54,45 +57,39 @@ import android.text.TextUtils;
 import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView.BufferType;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class SongList extends ListActivity implements OnClickListener,
-		OnSeekBarChangeListener {
+public class SongList extends ListActivity implements OnClickListener {
 	private static String TAG = "SongList";
-	ImageButton mPlayPauseButton;
 	TextView albumName;
-	TextView currentTime;
-	TextView totalTime;
 	MusicTable db;
 	String artist;
 	String album;
 	String service;
 	ProgressDialog progress;
-	SeekBar seekbar;
-	Handler handler;
 	Cursor songCursor;
 	SimpleCursorAdapter adapter;
 	public ArrayList<JamSongs> albumSongs;
 	SharedPreferences prefs;
-	long lastSeekTime;
-	long defaultPos = -1;
 	boolean servBound = false;
 	JamService mService;
-	Intent serviceIntent;
-	int seekMax;
-	boolean mBroadcastIsRegistered;
-	Intent in;
 	boolean doRetreive;
 	public DropboxAPI<AndroidAuthSession> mApi;
-
+	ImageButton nowPlayingArtBtn;
+	Button nowPlayingTitleBtn;
+	View border;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -102,23 +99,9 @@ public class SongList extends ListActivity implements OnClickListener,
 		service = intent.getStringExtra("service");
 		Log.i(TAG, artist + "/" + album);
 		setContentView(R.layout.song_list);
-		/*
-		mPlayPauseButton = (ImageButton) findViewById(R.id.control_play_btn);
-		mPlayPauseButton.setOnClickListener(this);
-		*/
 		albumName = (TextView) findViewById(R.id.album_name);
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
 		albumName.setOnClickListener(this);
-		/*
-		seekbar = (SeekBar) findViewById(R.id.progress);
-		seekbar.setOnSeekBarChangeListener(this);
-		serviceIntent = new Intent(this, JamService.class);
-		registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
-		// --- set up seekbar intent for broadcasting new position to
-		in = new Intent(Constants.BROADCAST_SEEKBAR);
-		currentTime = (TextView) findViewById(R.id.currenttime);
-		totalTime = (TextView) findViewById(R.id.totaltime);
-		handler = new Handler();
-		*/
 		db = new MusicTable(this);
 		db.open();
 		fillData();
@@ -132,28 +115,33 @@ public class SongList extends ListActivity implements OnClickListener,
 		albumName.setText(album);
 		
 	}
-
+	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			//Log.i(TAG, "onReceiver google");
+			Log.i(TAG, intent.getStringExtra("title"));
+			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
+			nowPlayingArtBtn.setVisibility(View.VISIBLE);
+			Bitmap bm = intent.getParcelableExtra("art");
+			nowPlayingArtBtn.setImageBitmap(Bitmap.createScaledBitmap(bm, 120, 80, false));
+			nowPlayingArtBtn.setOnClickListener(SongList.this);
+			nowPlayingArtBtn.setVisibility(View.VISIBLE);
+			nowPlayingTitleBtn = (Button) findViewById(R.id.art_text);
+			nowPlayingTitleBtn.setText(intent.getStringExtra("title"));
+			nowPlayingTitleBtn.setVisibility(View.VISIBLE);
+			nowPlayingTitleBtn.setOnClickListener(SongList.this);
+			border = (View) findViewById(R.id.border);
+			border.setVisibility(View.VISIBLE);
+		}
+	};
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
-		// TODO Auto-generated method stub
 		super.onSaveInstanceState(outState);
-	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		// Intent intent = new Intent(this, JamService.class);
-		// bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
-		// if(servBound) {
-		// unbindService(mConnection);
-		// servBound = false;
-		// }
-
 	}
 
 	@Override
@@ -161,8 +149,6 @@ public class SongList extends ListActivity implements OnClickListener,
 		super.onResume();
 		doRetreive = false;
 		fillData();
-		//registerReceiver(receiver, new IntentFilter(JamService.ACTION_SKIP));
-		// fillUrlData();
 	}
 
 	@Override
@@ -172,23 +158,7 @@ public class SongList extends ListActivity implements OnClickListener,
 	@Override
 	protected void onPause() {
 		super.onPause();
-		//unregisterReceiver(receiver);
 	}
-	
-	private BroadcastReceiver receiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Log.i(TAG, "onReceive()");
-			int counter = intent.getIntExtra("counter", 0);
-			int mediamax = intent.getIntExtra("mediamax", 0);
-			seekMax = mediamax;
-			currentTime.setText(intent.getStringExtra("currentTime"));
-			totalTime.setText("/"+intent.getStringExtra("endTime"));
-			seekbar.setMax(seekMax);
-			seekbar.setProgress(counter);
-		}
-	};
-	
 
 	@SuppressWarnings("deprecation")
 	private void fillData() {
@@ -203,8 +173,10 @@ public class SongList extends ListActivity implements OnClickListener,
 							.getString(4), songCursor.getString(6), songCursor
 							.getString(2), songCursor.getString(5), songCursor
 							.getString(3), songCursor.getInt(7), songCursor
-							.getString(8),songCursor.getString(9)));
+							.getString(8),songCursor.getString(9), songCursor.getLong(10)));
+			Log.i(TAG, albumSongs.get(i).getPath());
 			songCursor.moveToNext();
+
 		}
 
 		adapter = new SimpleCursorAdapter(this, R.layout.list_child_item,
@@ -254,69 +226,34 @@ public class SongList extends ListActivity implements OnClickListener,
 		Cursor c = ((SimpleCursorAdapter) l.getAdapter()).getCursor();
 		c.moveToPosition(position);
 		Log.i(TAG, c.getString(c.getColumnIndex("title")));
-		Uri uri = Uri.parse("content://media/external/audio/albumart");
-		Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
+		final Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
+		AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
 		play.putExtra("songTitle", c.getString(c.getColumnIndex("title")));
 		play.putExtra("position", position);
 		play.putParcelableArrayListExtra("albumsongs", albumSongs);
-		startActivity(play);
-		
-		mBroadcastIsRegistered = true;
+		if(am.isMusicActive()) {
+			play.putExtra("action", "skip");
+		}
+		startActivity(play);				
 		//doPlayPauseButton();
 		super.onListItemClick(l, v, position, id);
 
 	}
 
-	private void doPlayPauseButton() {
-		mPlayPauseButton.setImageDrawable(getBaseContext().getResources()
-				.getDrawable(R.drawable.playback_toggle));
-	}
-
 	@Override
 	public void onClick(View v) {
-		if (v == mPlayPauseButton) {
-			if (v.isSelected()) {
-				v.setSelected(false);
-				startService(new Intent(JamService.ACTION_PLAY));
-				doPlayPauseButton();
-				// ...Handle toggle off
-			} else {
-				v.setSelected(true);
-				doPlayPauseButton();
-				startService(new Intent(JamService.ACTION_PAUSE));
-				// ...Handled toggle on
-			}
-		} else if (v == albumName) {
+		if (v == albumName) {
 			Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
 			play.putExtra("position", 0);
 			play.putParcelableArrayListExtra("albumsongs", albumSongs);
 			startActivity(play);
 			//doPlayPauseButton();
+		} else if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
+			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			startActivity(intent);
 		}
 	}
-
-	@Override
-	public void onStopTrackingTouch(SeekBar seekBar) {
-		defaultPos = -1;
-	}
-
-	@Override
-	public void onStartTrackingTouch(SeekBar seekBar) {
-		lastSeekTime = 0;
-	}
-
-	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress,
-			boolean fromUser) {
-		if (fromUser) {
-			int seekPos = seekbar.getProgress();
-			Log.i(TAG, "progress: " + String.valueOf(seekPos));
-			in.putExtra("seekpos", seekPos);
-			sendBroadcast(in);
-		}
-
-	}
-
 
 	public class RetreiveGoogleUrl extends
 			AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
@@ -463,5 +400,21 @@ public class SongList extends ListActivity implements OnClickListener,
 		}
 		
 	}
-
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()) {
+			case R.id.menu_settings:
+				Intent intent = new Intent(this, SettingsActivity.class);
+				this.startActivity(intent);
+				return true;
+		}
+		return false;
+		
+	}
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.sub_menu_one, menu);
+		return true;
+	}
 }

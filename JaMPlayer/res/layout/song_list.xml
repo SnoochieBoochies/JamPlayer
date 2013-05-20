@@ -2,78 +2,71 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@drawable/blue_bg"
-    android:launchMode="singleInstance" >
+    android:orientation="vertical" >
 
-	    <TextView
-	        android:id="@+id/album_name"
-	        android:layout_width="fill_parent"
-	        android:layout_height="50dp"
-	        android:layout_alignParentLeft="true"
-	        android:layout_alignParentTop="true"
-	        android:paddingLeft="20dp"
-	        android:paddingTop="5dp"
-	        android:text="Album Name"
-	        android:textAppearance="?android:attr/textAppearanceLarge" />
+    <TextView
+        android:id="@+id/album_name"
+        android:layout_width="fill_parent"
+        android:layout_height="50dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:gravity="bottom"
+        android:paddingLeft="20dp"
+        android:paddingTop="5dp"
+        android:text="Album Name"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
-	    <ListView
-	        android:id="@id/android:list"
-	        android:layout_width="fill_parent"
-	        android:layout_height="fill_parent"
-	        android:layout_above="@+id/progress"
-	        android:layout_below="@+id/album_name"
-	        android:cacheColorHint="@color/transparent"
-	        android:paddingLeft="20dp" />
-	<!-- 
-	    <ImageButton
-	        android:id="@+id/control_play_btn"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_centerHorizontal="true"
-	        android:background="@android:color/transparent"
-	        android:padding="@dimen/play_btn_pad"
-	        android:src="@drawable/ic_appwidget_music_play" />
+    <ListView
+        android:id="@id/android:list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/album_name"
+        android:layout_above="@+id/relativeLayout1"
+        android:cacheColorHint="@color/transparent"
+        android:paddingLeft="20dp" />
+    <View
+    	android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:id="@+id/border"
+        android:layout_weight="1"
+        android:background="@android:color/white" 
+        android:layout_alignTop="@+id/relativeLayout1"
+        android:visibility="invisible"/>
+    <RelativeLayout
+        android:id="@+id/relativeLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:gravity="bottom" >
 
-	    <SeekBar
-	        android:id="@+id/progress"
-	        android:layout_width="wrap_content"
-	        android:layout_height="30dip"
-	        android:layout_above="@+id/control_play_btn"
-	        android:layout_alignParentLeft="true"
-	        android:layout_alignParentRight="true"
-	        android:paddingBottom="8dip"
-	        android:paddingLeft="8dip"
-	        android:paddingRight="8dip"
-	        android:progressDrawable="@drawable/seekbar_progress"
-	        android:thumb="@drawable/seek_thumb_normal" />
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:gravity="bottom"
+            android:weightSum="3" >
 
-	    <TextView
-	        android:id="@+id/totaltime"
-	        android:layout_width="60dip"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_alignParentRight="true"
-	        android:layout_alignTop="@+id/control_play_btn"
-	        android:layout_weight="1"
-	        android:gravity="right"
-	        android:paddingRight="5dip"
-	        android:textAppearance="?android:attr/textAppearanceMedium"
-	        android:textSize="14sp"
-	        android:textStyle="bold" />
+            <ImageButton
+                android:id="@+id/art_thumb"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_gravity="left"
+                android:paddingLeft="-20dp"
+                android:layout_weight="1"
+                android:background="@color/transparent"
+                android:visibility="invisible" />
 
-	    <TextView
-	        android:id="@+id/currenttime"
-	        android:layout_width="20dip"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_alignTop="@+id/control_play_btn"
-	        android:layout_toLeftOf="@+id/totaltime"
-	        android:layout_toRightOf="@+id/control_play_btn"
-	        android:paddingLeft="5dip"
-	        android:textAppearance="?android:attr/textAppearanceMedium"
-	        android:textSize="14sp"
-	        android:textStyle="bold" />
-	-->
+            <Button
+                android:id="@+id/art_text"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_weight="2"
+                android:text="Title"
+                android:visibility="invisible"
+                android:background="@color/transparent"
+                android:textColor="#FFFFFF"
+                android:textAppearance="?android:attr/textAppearanceLarge"  />
+        </LinearLayout>
+    </RelativeLayout>
+
 </RelativeLayout>

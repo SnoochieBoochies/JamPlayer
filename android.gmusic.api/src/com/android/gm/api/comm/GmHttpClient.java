@@ -25,6 +25,7 @@ public class GmHttpClient extends SyncHttpClient {
     		     @Override
     		    public void onFailure(Throwable error, String content) {
     		    	 Log.i("GMHTTPCLIENT", "onFailure()");
+    		    	 Log.i("GMHTTPCLIENT", content);
     		    	 super.onFailure(error, content);
     		    }
     		   

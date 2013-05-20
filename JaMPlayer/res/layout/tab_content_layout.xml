@@ -10,9 +10,56 @@
         android:id="@android:id/list"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/control_play_btn"
+        android:layout_alignParentLeft="true"
+        android:layout_alignTop="@+id/relativeLayout1"
         android:cacheColorHint="#00000000"
-        android:listSelector="@android:color/transparent"
-        android:transcriptMode="disabled" />
+        android:groupIndicator="@drawable/group_indicator"
+        android:listSelector="@color/transparent"
+        android:transcriptMode="disabled" >
+    </ExpandableListView>
 
+    <View
+    	android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:id="@+id/border"
+        android:layout_weight="1"
+        android:background="@android:color/white" 
+        android:layout_alignTop="@+id/relativeLayout2"
+        android:visibility="invisible"/>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:id="@+id/relativeLayout2"
+        android:layout_alignParentBottom="true"
+        android:gravity="bottom" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:gravity="bottom"
+            android:weightSum="3" >
+
+            <ImageButton
+                android:id="@+id/art_thumb"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:paddingLeft="-20dp"
+                android:layout_gravity="left"
+                android:visibility="invisible"
+                android:background="@color/transparent" />
+
+            <Button
+                android:id="@+id/art_text"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_weight="2"
+                android:visibility="invisible"
+                android:text="Title" 
+				android:background="@color/transparent"
+                android:textColor="#FFFFFF"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+        </LinearLayout>
+    </RelativeLayout>
 </RelativeLayout>

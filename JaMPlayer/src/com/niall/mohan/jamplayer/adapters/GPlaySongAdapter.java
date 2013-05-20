@@ -25,6 +25,7 @@ public class GPlaySongAdapter extends JamSongs {
 			mediaInfo.setArtwork("http:"+s.getAlbumArtUrl());
 			Log.i("ART", mediaInfo.getArtwork());
 		}
+		mediaInfo.setAlbumId(0);
 		return mediaInfo;
 	}
 }

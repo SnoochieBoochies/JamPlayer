@@ -232,7 +232,6 @@ public class GoogleMusicApi {
 			tag.setField(FieldKey.TRACK_TOTAL,
 					String.valueOf(song.getTotalTracks()));
 			tag.setField(FieldKey.YEAR, String.valueOf(song.getYear()));
-			
 			if(song.getAlbumArtUrl() != null)
 			{
 				Artwork artwork = new Artwork();

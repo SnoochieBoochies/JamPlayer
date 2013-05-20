@@ -129,8 +129,22 @@ containing a value of this type.
         public static final int zOrderOnTop=0x7f01000d;
     }
     public static final class color {
-        public static final int state1_text_color=0x7f070001;
-        public static final int transparent=0x7f070000;
+        public static final int common_action_bar_splitter=0x7f050009;
+        /**  Sign-in Button Colors 
+         */
+        public static final int common_signin_btn_dark_text_default=0x7f050000;
+        public static final int common_signin_btn_dark_text_disabled=0x7f050002;
+        public static final int common_signin_btn_dark_text_focused=0x7f050003;
+        public static final int common_signin_btn_dark_text_pressed=0x7f050001;
+        public static final int common_signin_btn_default_background=0x7f050008;
+        public static final int common_signin_btn_light_text_default=0x7f050004;
+        public static final int common_signin_btn_light_text_disabled=0x7f050006;
+        public static final int common_signin_btn_light_text_focused=0x7f050007;
+        public static final int common_signin_btn_light_text_pressed=0x7f050005;
+        public static final int common_signin_btn_text_dark=0x7f05000c;
+        public static final int common_signin_btn_text_light=0x7f05000d;
+        public static final int state1_text_color=0x7f05000b;
+        public static final int transparent=0x7f05000a;
     }
     public static final class dimen {
         public static final int play_btn_pad=0x7f080000;
@@ -146,182 +160,206 @@ containing a value of this type.
         public static final int blue_bg=0x7f020007;
         public static final int btn_connect_sc_l=0x7f020008;
         public static final int closed=0x7f020009;
-        public static final int dropbox=0x7f02000a;
-        public static final int dummy_album_art=0x7f02000b;
-        public static final int empty_divider=0x7f02000c;
-        public static final int gplay=0x7f02000d;
-        public static final int ic_appwidget_music_pause=0x7f02000e;
-        public static final int ic_appwidget_music_play=0x7f02000f;
-        public static final int ic_headset=0x7f020010;
-        public static final int ic_launcher=0x7f020011;
-        public static final int ic_menu_refresh=0x7f020012;
-        public static final int indicator_ic_mp_playing_large=0x7f020013;
-        public static final int last_fm=0x7f020014;
-        public static final int lastfm_icon_60=0x7f020015;
-        public static final int music_pause_widget=0x7f020016;
-        public static final int music_play_widget=0x7f020017;
-        public static final int open=0x7f020018;
-        public static final int playback_toggle=0x7f020019;
-        public static final int playbackstart=0x7f02001a;
-        public static final int progress_blue=0x7f02001b;
-        public static final int progress_grey=0x7f02001c;
-        public static final int purple_bg=0x7f02001d;
-        public static final int scloud=0x7f02001e;
-        public static final int seek_thumb_normal=0x7f02001f;
-        public static final int seekbar_progress=0x7f020020;
-        public static final int temp=0x7f020021;
-        public static final int turquise_bg=0x7f020022;
+        public static final int common_signin_btn_icon_dark=0x7f02000a;
+        public static final int common_signin_btn_icon_disabled_dark=0x7f02000b;
+        public static final int common_signin_btn_icon_disabled_focus_dark=0x7f02000c;
+        public static final int common_signin_btn_icon_disabled_focus_light=0x7f02000d;
+        public static final int common_signin_btn_icon_disabled_light=0x7f02000e;
+        public static final int common_signin_btn_icon_focus_dark=0x7f02000f;
+        public static final int common_signin_btn_icon_focus_light=0x7f020010;
+        public static final int common_signin_btn_icon_light=0x7f020011;
+        public static final int common_signin_btn_icon_normal_dark=0x7f020012;
+        public static final int common_signin_btn_icon_normal_light=0x7f020013;
+        public static final int common_signin_btn_icon_pressed_dark=0x7f020014;
+        public static final int common_signin_btn_icon_pressed_light=0x7f020015;
+        public static final int common_signin_btn_text_dark=0x7f020016;
+        public static final int common_signin_btn_text_disabled_dark=0x7f020017;
+        public static final int common_signin_btn_text_disabled_focus_dark=0x7f020018;
+        public static final int common_signin_btn_text_disabled_focus_light=0x7f020019;
+        public static final int common_signin_btn_text_disabled_light=0x7f02001a;
+        public static final int common_signin_btn_text_focus_dark=0x7f02001b;
+        public static final int common_signin_btn_text_focus_light=0x7f02001c;
+        public static final int common_signin_btn_text_light=0x7f02001d;
+        public static final int common_signin_btn_text_normal_dark=0x7f02001e;
+        public static final int common_signin_btn_text_normal_light=0x7f02001f;
+        public static final int common_signin_btn_text_pressed_dark=0x7f020020;
+        public static final int common_signin_btn_text_pressed_light=0x7f020021;
+        public static final int dropbox=0x7f020022;
+        public static final int dummy_album_art=0x7f020023;
+        public static final int empty_divider=0x7f020024;
+        public static final int gplay=0x7f020025;
+        public static final int group_close=0x7f020026;
+        public static final int group_indicator=0x7f020027;
+        public static final int group_open=0x7f020028;
+        public static final int ic_appwidget_music_pause=0x7f020029;
+        public static final int ic_appwidget_music_play=0x7f02002a;
+        public static final int ic_headset=0x7f02002b;
+        public static final int ic_launcher=0x7f02002c;
+        public static final int ic_menu_refresh=0x7f02002d;
+        public static final int indicator_ic_mp_playing_large=0x7f02002e;
+        public static final int last_fm=0x7f02002f;
+        public static final int lastfm_icon_60=0x7f020030;
+        public static final int music_pause_widget=0x7f020031;
+        public static final int music_play_widget=0x7f020032;
+        public static final int open=0x7f020033;
+        public static final int playback_toggle=0x7f020034;
+        public static final int playbackstart=0x7f020035;
+        public static final int progress_blue=0x7f020036;
+        public static final int progress_grey=0x7f020037;
+        public static final int purple_bg=0x7f020038;
+        public static final int scloud=0x7f020039;
+        public static final int seek_thumb_normal=0x7f02003a;
+        public static final int seekbar_progress=0x7f02003b;
+        public static final int temp=0x7f02003c;
+        public static final int turquise_bg=0x7f02003d;
     }
     public static final class id {
-        public static final int album_appwidget=0x7f05000f;
-        public static final int album_art=0x7f050016;
-        public static final int album_name=0x7f050021;
-        public static final int artist=0x7f050011;
-        public static final int artistalbum=0x7f050023;
+        public static final int album_art=0x7f06000c;
+        public static final int album_name=0x7f060018;
+        public static final int art_text=0x7f06001c;
+        public static final int art_thumb=0x7f06001b;
         public static final int bgProgress=0x01010000;
-        public static final int child_text=0x7f05000c;
-        public static final int connect_dropbox_btn=0x7f05001d;
-        public static final int connect_gplay_btn=0x7f05001c;
-        public static final int connect_last_fm_btn=0x7f05001e;
-        public static final int connect_scloud_btn=0x7f05001f;
-        public static final int control_play=0x7f050012;
-        public static final int control_play_btn=0x7f050009;
-        public static final int currenttime=0x7f050019;
-        public static final int duration=0x7f050026;
-        public static final int each_song=0x7f05000e;
-        public static final int google_list=0x7f050005;
-        public static final int hybrid=0x7f050004;
-        public static final int icon=0x7f05000d;
-        public static final int line1=0x7f050027;
-        public static final int line2=0x7f050028;
-        public static final int listView=0x7f050024;
-        public static final int menu_settings=0x7f05002b;
-        public static final int none=0x7f050000;
-        public static final int normal=0x7f050001;
-        public static final int nowplaying=0x7f050013;
-        public static final int parent_text=0x7f050014;
-        public static final int password=0x7f05000b;
-        public static final int play_indicator=0x7f050029;
-        public static final int progress=0x7f050017;
-        public static final int refresh=0x7f05002c;
-        public static final int satellite=0x7f050002;
-        public static final int sd_icon=0x7f05001a;
-        public static final int sd_message=0x7f05001b;
-        public static final int songCurrentDurationLabel=0x7f050007;
-        public static final int songTotalDurationLabel=0x7f050008;
-        public static final int song_name=0x7f050015;
-        public static final int terrain=0x7f050003;
-        public static final int text1=0x7f050020;
-        public static final int timerDisplay=0x7f050006;
-        public static final int title=0x7f050010;
-        public static final int totaltime=0x7f050018;
-        public static final int trackname=0x7f050022;
-        public static final int username=0x7f05000a;
-        public static final int viewpager=0x7f050025;
-        public static final int webview=0x7f05002a;
+        public static final int border=0x7f06001a;
+        public static final int child_text=0x7f060007;
+        public static final int connect_dropbox_btn=0x7f060014;
+        public static final int connect_gplay_btn=0x7f060013;
+        public static final int connect_last_fm_btn=0x7f060015;
+        public static final int connect_scloud_btn=0x7f060016;
+        public static final int control_play_btn=0x7f06000e;
+        public static final int currenttime=0x7f060010;
+        public static final int duration=0x7f06001e;
+        public static final int each_song=0x7f060009;
+        public static final int hybrid=0x7f060004;
+        public static final int icon=0x7f060008;
+        public static final int line1=0x7f06001f;
+        public static final int line2=0x7f060020;
+        public static final int menu_settings=0x7f060023;
+        public static final int none=0x7f060000;
+        public static final int normal=0x7f060001;
+        public static final int parent_text=0x7f06000a;
+        public static final int password=0x7f060006;
+        public static final int play_indicator=0x7f060021;
+        public static final int progress=0x7f06000d;
+        public static final int refresh=0x7f060024;
+        public static final int relativeLayout1=0x7f060019;
+        public static final int relativeLayout2=0x7f06001d;
+        public static final int satellite=0x7f060002;
+        public static final int sd_icon=0x7f060011;
+        public static final int sd_message=0x7f060012;
+        public static final int song_name=0x7f06000b;
+        public static final int terrain=0x7f060003;
+        public static final int text1=0x7f060017;
+        public static final int totaltime=0x7f06000f;
+        public static final int username=0x7f060005;
+        public static final int webview=0x7f060022;
     }
     public static final class layout {
         public static final int exp_list=0x7f030000;
-        public static final int google_tab_layout=0x7f030001;
-        public static final int last_fm_signin=0x7f030002;
-        public static final int list_child_item=0x7f030003;
-        public static final int list_item_child=0x7f030004;
-        public static final int list_item_parent=0x7f030005;
-        public static final int local_list_artist=0x7f030006;
-        public static final int main=0x7f030007;
-        public static final int music_appwidget=0x7f030008;
-        public static final int nowplaying=0x7f030009;
-        public static final int parent_text=0x7f03000a;
-        public static final int playing_item=0x7f03000b;
-        public static final int sd_error=0x7f03000c;
-        public static final int settings_layout=0x7f03000d;
-        public static final int song=0x7f03000e;
-        public static final int song_list=0x7f03000f;
-        public static final int statusbar=0x7f030010;
-        public static final int tab2_layout=0x7f030011;
-        public static final int tab3_layout=0x7f030012;
-        public static final int tab_content_layout=0x7f030013;
-        public static final int tabmain=0x7f030014;
-        public static final int tabs_viewpager_layout=0x7f030015;
-        public static final int track_list_item_common=0x7f030016;
-        public static final int web_view=0x7f030017;
+        public static final int last_fm_signin=0x7f030001;
+        public static final int list_child_item=0x7f030002;
+        public static final int list_item_child=0x7f030003;
+        public static final int list_item_parent=0x7f030004;
+        public static final int local_list_artist=0x7f030005;
+        public static final int parent_text=0x7f030006;
+        public static final int playing_item=0x7f030007;
+        public static final int sd_error=0x7f030008;
+        public static final int settings_layout=0x7f030009;
+        public static final int song=0x7f03000a;
+        public static final int song_list=0x7f03000b;
+        public static final int tab_content_layout=0x7f03000c;
+        public static final int tabmain=0x7f03000d;
+        public static final int track_list_item_common=0x7f03000e;
+        public static final int web_view=0x7f03000f;
     }
     public static final class menu {
         public static final int sub_menu_one=0x7f0a0000;
         public static final int sub_menu_two=0x7f0a0001;
     }
     public static final class string {
-        public static final int app_name=0x7f060011;
+        public static final int app_name=0x7f070015;
         /**   Title for notification shown when GooglePlayServices is unavailable [CHAR LIMIT=70] 
          */
-        public static final int auth_client_availability_notification_title=0x7f06000e;
+        public static final int auth_client_availability_notification_title=0x7f07000f;
         /**   Title for notification shown when GooglePlayServices is unavailable [CHAR LIMIT=42] 
          */
-        public static final int auth_client_play_services_err_notification_msg=0x7f06000f;
+        public static final int auth_client_play_services_err_notification_msg=0x7f070010;
         /**   Requested by string saying which app requested the notification. [CHAR LIMIT=42] 
          */
-        public static final int auth_client_requested_by_msg=0x7f060010;
-        public static final int cloud_media=0x7f060015;
+        public static final int auth_client_requested_by_msg=0x7f070011;
+        public static final int cloud_media=0x7f070019;
         /**  Button in confirmation dialog to enable Google Play services.  Clicking it
         will direct user to application settings of Google Play services where they
         can enable it [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_enable_button=0x7f060006;
+        public static final int common_google_play_services_enable_button=0x7f070006;
         /**  Message in confirmation dialog informing user they need to enable
         Google Play services in application settings [CHAR LIMIT=NONE] 
          */
-        public static final int common_google_play_services_enable_text=0x7f060005;
+        public static final int common_google_play_services_enable_text=0x7f070005;
         /**  Title of confirmation dialog informing user they need to enable
         Google Play services in application settings [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_enable_title=0x7f060004;
+        public static final int common_google_play_services_enable_title=0x7f070004;
         /**  Button in confirmation dialog for installing Google Play services [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_install_button=0x7f060003;
+        public static final int common_google_play_services_install_button=0x7f070003;
         /**  (For phones) Message in confirmation dialog informing user that
         they need to install Google Play services (from Play Store) [CHAR LIMIT=NONE] 
          */
-        public static final int common_google_play_services_install_text_phone=0x7f060001;
+        public static final int common_google_play_services_install_text_phone=0x7f070001;
         /**  (For tablets) Message in confirmation dialog informing user that
         they need to install Google Play services (from Play Store) [CHAR LIMIT=NONE] 
          */
-        public static final int common_google_play_services_install_text_tablet=0x7f060002;
+        public static final int common_google_play_services_install_text_tablet=0x7f070002;
         /**  Title of confirmation dialog informing user that they need to install
         Google Play services (from Play Store) [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_install_title=0x7f060000;
+        public static final int common_google_play_services_install_title=0x7f070000;
         /**  Message in confirmation dialog informing user there is an unknown issue in Google Play
         services [CHAR LIMIT=NONE] 
          */
-        public static final int common_google_play_services_unknown_issue=0x7f060009;
+        public static final int common_google_play_services_unknown_issue=0x7f070009;
         /**  Message in confirmation dialog informing user that Google Play services is not supported on their device [CHAR LIMIT=NONE] 
          */
-        public static final int common_google_play_services_unsupported_text=0x7f06000b;
+        public static final int common_google_play_services_unsupported_text=0x7f07000b;
         /**  Title of confirmation dialog informing user that Google Play services is not supported on their device [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_unsupported_title=0x7f06000a;
+        public static final int common_google_play_services_unsupported_title=0x7f07000a;
         /**  Button in confirmation dialog for updating Google Play services [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_update_button=0x7f06000c;
+        public static final int common_google_play_services_update_button=0x7f07000c;
         /**  Message in confirmation dialog informing user that they need to update
         Google Play services (from Play Store) [CHAR LIMIT=NONE] 
          */
-        public static final int common_google_play_services_update_text=0x7f060008;
+        public static final int common_google_play_services_update_text=0x7f070008;
         /**  Title of confirmation dialog informing user that they need to update
         Google Play services (from Play Store) [CHAR LIMIT=40] 
          */
-        public static final int common_google_play_services_update_title=0x7f060007;
-        /**  Long form sign-in button text. This is the placeholder text, used if we can't
-        find the service-side assets. [CHAR LIMIT=25] 
+        public static final int common_google_play_services_update_title=0x7f070007;
+        /**  Sign-in button text [CHAR LIMIT=15] 
          */
-        public static final int common_signin_button_text_long=0x7f06000d;
-        public static final int local_media=0x7f060014;
-        public static final int local_storage=0x7f060017;
-        public static final int menu_settings=0x7f060012;
-        public static final int notification_artist_album=0x7f060019;
-        public static final int play_list=0x7f060018;
-        public static final int refresh=0x7f060013;
-        public static final int welcome=0x7f060016;
+        public static final int common_signin_button_text=0x7f07000d;
+        /**  Long form sign-in button text [CHAR LIMIT=30] 
+         */
+        public static final int common_signin_button_text_long=0x7f07000e;
+        public static final int local_media=0x7f070018;
+        public static final int local_storage=0x7f07001b;
+        /**  Location client code resources (prefix with location_client) 
+
+        Begin strings for location.reporting
+    
+
+        Some InactiveReason names.  See more in OneUp/package/location/res/values/strings.xml
+    
+         */
+        public static final int location_client_ulr_inactive_age_under_13=0x7f070012;
+        public static final int location_client_ulr_inactive_age_unknown=0x7f070013;
+        public static final int location_client_ulr_inactive_unknown_restriction=0x7f070014;
+        public static final int menu_settings=0x7f070016;
+        public static final int notification_artist_album=0x7f07001d;
+        public static final int play_list=0x7f07001c;
+        public static final int refresh=0x7f070017;
+        public static final int welcome=0x7f07001a;
     }
     public static final class style {
         public static final int CustomTabWidget=0x7f090001;

@@ -15,7 +15,8 @@ public class JamSongs  implements Parcelable{
 	private int trackNum;
 	private String id;
 	private String artworkUri;
-	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum, String id, String artworkUri) {
+	private long albumId; //local only
+	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum, String id, String artworkUri, long albumId) {
 		this.title = title;
 		this.path = path;
 		this.service = service;
@@ -25,6 +26,7 @@ public class JamSongs  implements Parcelable{
 		this.trackNum = trackNum;
 		this.id = id;
 		this.artworkUri = artworkUri;
+		this.albumId = albumId;
 	}
 	public JamSongs() {};
 
@@ -56,6 +58,9 @@ public class JamSongs  implements Parcelable{
 	public String getArtwork() {
 		return artworkUri;
 	}
+	public long getAlbumId() {
+		return albumId;
+	}
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -83,6 +88,9 @@ public class JamSongs  implements Parcelable{
 	public void setArtwork(String artworkUri) {
 		this.artworkUri = artworkUri;
 	}
+	public void setAlbumId(long albumId) {
+		this.albumId = albumId;
+	}
 	@Override
 	public String toString() {
 		return this.title+" - "+this.album;
@@ -103,6 +111,7 @@ public class JamSongs  implements Parcelable{
 		dest.writeInt(trackNum);
 		dest.writeString(id);
 		dest.writeString(artworkUri);
+		dest.writeLong(albumId);
 	}
 	public static final Parcelable.Creator<JamSongs> CREATOR = new Creator<JamSongs>() {
 		@Override
@@ -125,5 +134,6 @@ public class JamSongs  implements Parcelable{
 		trackNum = source.readInt();
 		id = source.readString();
 		artworkUri = source.readString();
+		albumId = source.readLong();
 	}
 }

@@ -1,38 +1,31 @@
 package com.niall.mohan.jamplayer.tabs;
 
-import com.google.android.gms.internal.ar;
-import com.niall.mohan.jamplayer.JamService;
-import com.niall.mohan.jamplayer.MusicTable;
-import com.niall.mohan.jamplayer.R;
-
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ExpandableListActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.RelativeLayout;
+import android.widget.ImageButton;
 import android.widget.SimpleCursorTreeAdapter;
-import android.widget.Toast;
 
-public class LocalActivity extends ExpandableListActivity {
+import com.niall.mohan.jamplayer.JamService;
+import com.niall.mohan.jamplayer.MusicRetriever;
+import com.niall.mohan.jamplayer.MusicTable;
+import com.niall.mohan.jamplayer.R;
+
+public class LocalActivity extends ExpandableListActivity implements OnClickListener {
 	private static String TAG = "LocalActivity";
 	private ArtistAlbumListAdapter adapter;
 	private String currentArtist;
@@ -42,6 +35,10 @@ public class LocalActivity extends ExpandableListActivity {
 	private String currentService;
 	private Cursor artistCursor;
 	public MusicTable db;
+	MusicRetriever mRetriever;
+	ImageButton nowPlayingArtBtn;
+	Button nowPlayingTitleBtn;
+	View border;
 	//setup. Get last selected artist/album combo.
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +53,7 @@ public class LocalActivity extends ExpandableListActivity {
 			currentService = savedInstanceState.getString("selectedservice");
 		}
 		setContentView(R.layout.tab_content_layout);
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
 		db = new MusicTable(this);
 		db.open();
 		fillData();
@@ -142,6 +140,33 @@ public class LocalActivity extends ExpandableListActivity {
 					convertView, parent);
 		}
 
+	}
+	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			//Log.i(TAG, "onReceiver google");
+			Log.i(TAG, intent.getStringExtra("title"));
+			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
+			nowPlayingArtBtn.setVisibility(View.VISIBLE);
+			Bitmap bm = intent.getParcelableExtra("art");
+			nowPlayingArtBtn.setImageBitmap(Bitmap.createScaledBitmap(bm, 120, 80, false));
+			nowPlayingArtBtn.setOnClickListener(LocalActivity.this);
+			nowPlayingArtBtn.setVisibility(View.VISIBLE);
+			nowPlayingTitleBtn = (Button) findViewById(R.id.art_text);
+			nowPlayingTitleBtn.setText(intent.getStringExtra("title"));
+			nowPlayingTitleBtn.setVisibility(View.VISIBLE);
+			nowPlayingTitleBtn.setOnClickListener(LocalActivity.this);
+			border = (View) findViewById(R.id.border);
+			border.setVisibility(View.VISIBLE);
+		}
+	};
+	@Override
+	public void onClick(View v) {
+		if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
+			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			startActivity(intent);
+		}
 	}
 	
 }

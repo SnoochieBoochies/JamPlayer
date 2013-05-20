@@ -32,6 +32,7 @@ public class PrepareMusicRetrieverTask extends AsyncTask<Void, Void, Void> {
         mRetriever = retriever;
         mListener = listener;
     }
+    public PrepareMusicRetrieverTask() {}
 
     @Override
     protected Void doInBackground(Void... arg0) {

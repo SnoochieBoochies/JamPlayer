@@ -1,21 +1,39 @@
 package com.niall.mohan.jamplayer.tabs;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import com.niall.mohan.jamplayer.JamService;
 import com.niall.mohan.jamplayer.R;
 import com.niall.mohan.jamplayer.SettingsActivity;
+import com.niall.mohan.jamplayer.WriteToCache;
 
 import android.app.TabActivity;
+import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
 //Using TabActivity as my test phone is running 2.3 and I don't have time to mess with ActionbarSherlock...
 @SuppressWarnings("deprecation")
-public class TabsActivity extends TabActivity implements OnTabChangeListener,ViewPager.OnPageChangeListener {
+public class TabsActivity extends TabActivity implements OnTabChangeListener, OnClickListener {
 	private static String TAG = "TabsActivity";
 	private TabHost mTabHost;	
 	@Override
@@ -24,6 +42,7 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener,Vie
 		//startService(new Intent(JamService.ACTION_NONE));
 		//startService(new Intent(this,JamService.class));
 		setContentView(R.layout.tabmain);
+		Log.i(TAG, "onCreate()");
 		if (savedInstanceState != null) {
             //mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab")); //set the tab as per the saved state
             //mTabHost.getTabWidget().getChildAt(0).getLayoutParams().width =(int) 30;
@@ -44,31 +63,19 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener,Vie
         mTabHost.addTab(mTabHost.newTabSpec("Local").setIndicator("Local").setContent(new Intent(this,LocalActivity.class)));
         mTabHost.setOnTabChangedListener(this);
 	}
-
+	@Override
+	protected void onPause() {
+		super.onPause();
+	}
+	@Override
+	protected void onResume() {
+		super.onResume();
+	}
 
 	@Override
 	public void onTabChanged(String tabId) {
 		Log.i(TAG, "tab changed " + tabId);
 	}
-
-	@Override
-	public void onPageScrollStateChanged(int arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onPageScrolled(int arg0, float arg1, int arg2) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onPageSelected(int arg0) {
-		// TODO Auto-generated method stub
-		this.mTabHost.setCurrentTab(arg0);
-	}
-
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
@@ -85,6 +92,10 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener,Vie
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.sub_menu_one, menu);
 		return true;
+	}
+	@Override
+	public void onClick(View v) {
+
 	}
 
 }

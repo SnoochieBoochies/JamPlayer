@@ -38,7 +38,8 @@ public class MusicRetriever {
 				MusicTable.MEDIA_PROJECTION, null, null, null);
 		cursor.moveToFirst();
 		for (int i = 0; i < cursor.getCount(); i++) {
-				JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getInt(5), "","");
+				JamSongs mediaInfo = new JamSongs(cursor.getString(0), cursor.getString(1),"local",cursor.getString(2),cursor.getString(3),cursor.getString(4),cursor.getInt(5), "",
+						cursor.getString(1),cursor.getLong(6));
 				//Log.i(TAG, mediaInfo._album);
 				//MediaInfo mediaInfo = new MediaInfo(cursor.getString(0));
 				db.insert(mediaInfo);
@@ -49,26 +50,7 @@ public class MusicRetriever {
 		Log.i(TAG, "Pushed to db");
 				//showPlayList();
 	}
-	//make the calls from the database for songs.
-	//still atm only retreiving from sd card.
-	//need to put in shared preferences for the first startup of the app so i don't keep quering the sd card.
-	public void retrieveFromDatabase() {
-		ArrayList<JamSongs> lest = (ArrayList<JamSongs>) db.queryAll();
-		for(JamSongs s: lest) {
-			Log.i(TAG, s.getTitle());
-		}
-		//ContentResolver mResolver = getContentResolver();
-		//Cursor mCursor = mResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,MusicTable.MEDIA_PROJECTION,null,null,null);
-		//mCursor.moveToFirst();
-		//do {
-		//	Log.i(TAG, mCursor.getString(1));
-		//} while(mCursor.moveToNext());
-		//db = new MusicTable();
-		//songs = db.queryAll(); //broadcast this?
-		//mCursor.close();
-		//Log.i(TAG, "list size from database is: "+ songs.size());
 
-	}
 	/*
 	//like a copy of MEdiaplayer.prepare(). It's an async task for loading media
 	public void prepare() {

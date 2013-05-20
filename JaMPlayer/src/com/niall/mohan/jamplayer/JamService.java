@@ -12,8 +12,12 @@ import com.niall.mohan.jamplayer.tabs.PlayingActivity;
 import com.niall.mohan.jamplayer.tabs.SongList;
 import com.niall.mohan.jamplayer.tabs.SoundcloudActivity;
 
+import de.umass.lastfm.Album;
+import de.umass.lastfm.Artist;
 import de.umass.lastfm.Authenticator;
 import de.umass.lastfm.Caller;
+import de.umass.lastfm.ImageSize;
+import de.umass.lastfm.Result;
 import de.umass.lastfm.Session;
 import de.umass.lastfm.Track;
 import de.umass.lastfm.scrobble.ScrobbleResult;
@@ -57,12 +61,14 @@ import android.os.PowerManager;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
-public class JamService extends Service implements OnCompletionListener, OnPreparedListener,OnBufferingUpdateListener,OnErrorListener, OnSeekCompleteListener, MusicFocusable,
+public class JamService extends Service implements OnCompletionListener, OnPreparedListener,OnErrorListener, OnSeekCompleteListener, MusicFocusable,
 PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	
 	/*--------------------------------------*/
@@ -70,7 +76,9 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	private int seekPos;
 	private int maxPos;
 	Intent seekIntent;
+	Intent nowPlayingIntent;
 	private final Handler handler = new Handler();
+	private final Handler nowHandler = new Handler();
 	private String lastFmKey;
 	private String lastFmUser;
 	SharedPreferences prefs;
@@ -80,10 +88,12 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     public static final String ACTION_PLAY = "com.niall.mohan.jamplayer.action.PLAY";
     public static final String ACTION_PAUSE = "com.niall.mohan.jamplayer.action.PAUSE";
     public static final String ACTION_STOP = "com.niall.mohan.jamplayer.action.STOP";
+    public static final String ACTION_SEEK = "com.niall.mohan.jamplayer.action.SEEK";
     public static final String ACTION_SKIP = "com.niall.mohan.jamplayer.action.SKIP";
     public static final String ACTION_REWIND = "com.niall.mohan.jamplayerr.action.REWIND";
     public static final String ACTION_URL = "com.niall.mohan.jamplayer.action.URL";
     public static final String ACTION_NONE = "com.niall.mohan.jamplayer.action.NONE";
+    public static final String ACTION_NOW_PLAYING = "com.niall.mohan.jamplayer.action.NOW_PLAYING";
     // The volume we set the media player to when we lose audio focus, but are allowed to reduce
     // the volume instead of stopping playback.
     public static final float DUCK_VOLUME = 0.1f;
@@ -117,7 +127,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     WifiLock mWifiLock;
     final int NOTIFICATION_ID = 1;
     MusicRetriever mRetriever;
-    Bitmap mDummyAlbumArt;
+    Bitmap art;
     ComponentName mMediaButtonReceiverComponent;
     AudioManager mAudioManager;
     NotificationManager mNotificationManager;
@@ -145,7 +155,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             mPlayer.setOnCompletionListener(this);
             mPlayer.setOnErrorListener(this);
             mPlayer.setOnSeekCompleteListener(this);
-            mPlayer.setOnBufferingUpdateListener(this);
         }
         else
             mPlayer.reset();
@@ -166,13 +175,15 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             mAudioFocusHelper = new AudioFocusHelper(getApplicationContext(), this);
         else
             mAudioFocus = AudioFocus.Focused; // no focus feature, so we always "have" audio focus
-        mDummyAlbumArt = BitmapFactory.decodeResource(getResources(), R.drawable.dummy_album_art);
         mMediaButtonReceiverComponent = new ComponentName(this, MusicIntentReceiver.class);
 
-        seekIntent = new Intent(ACTION_SKIP);
+        seekIntent = new Intent(ACTION_SEEK);
+        nowPlayingIntent = new Intent(ACTION_NOW_PLAYING);
         prefs = PreferenceManager.getDefaultSharedPreferences(JamService.this);
         lastFmKey = prefs.getString("LastFm_Access", "null");
         lastFmUser = prefs.getString("LastFm_User", "null");
+        if(lastFmKey == "null")
+        	Toast.makeText(getApplicationContext(), "Not logged in for scrobbling to Last.fm", 3000).show();
         Log.i(TAG, lastFmKey);
         session = Session.createSession(Constants.LAST_FM_API_KEY, Constants.LAST_FM_SECRET, lastFmKey);
     }
@@ -181,20 +192,20 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     	String action = intent.getAction();
     	currentListPosition = intent.getIntExtra("position", -1);
     	albumSongs = intent.getParcelableArrayListExtra("albumsongs");
-    	//Log.i(TAG, "size "+String.valueOf(albumSongs.size()));
-    	if(intent.equals(null)) Log.i(TAG, "null");
+    	art = intent.getParcelableExtra("art");
+    	if(intent.equals(null)) Log.i(TAG, "null intent");
 		if(action.equals(ACTION_PLAY)) processPlayRequest(currentListPosition);
 		else if(action.equals(ACTION_STOP)) processStopRequest();
-		else if(action.equals(ACTION_SKIP)) processSkipRequest();
+		else if(action.equals(ACTION_SKIP)) processSkipRequest(currentListPosition);
 		else if(action.equals(ACTION_PAUSE)) processPauseRequest();
 		else if(action.equals(ACTION_TOGGLE_PLAYBACK)) processTogglePlaybackRequest();
 
 		else if(action.equals(ACTION_NONE)) onCreate();
     	Log.i(TAG, String.valueOf(currentListPosition));
 		
-		registerReceiver(receiver, new IntentFilter(Constants.BROADCAST_SEEKBAR));    	
+		registerReceiver(seekReceiver, new IntentFilter(Constants.BROADCAST_SEEKBAR));    	
     	setupHandler();
-    	//processPlayRequest(currentListPosition);
+		
     	return START_STICKY;
     }
     void processTogglePlaybackRequest() {
@@ -211,13 +222,17 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     		Log.i(TAG,"pos "+ String.valueOf(position));
             Log.i(TAG, albumSongs.get(position).getPath());
             mWhatToPlayAfterRetrieve = albumSongs.get(position);
-            mStartPlayingAfterRetrieve = true;
+            mStartPlayingAfterRetrieve = true;   
+            Intent in = new Intent(ACTION_NOW_PLAYING);
+            in.putExtra("title", albumSongs.get(position).getTitle());
+            in.putExtra("art", art);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(in);
             return;
         }
         tryToGetAudioFocus();
         if (mState == State.Stopped) {
             // If we're stopped, just go ahead to the next song and start playing
-            playNextSong(albumSongs.get(position).getPath());
+            playNextSong(albumSongs.get(position).getPath(),position);
             Log.i("LELEL", "LELEL");
         } else if (mState == State.Paused) {
             // If we're paused, just continue playback and restore the 'foreground service' state.
@@ -225,9 +240,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             setUpAsForeground(mSongTitle + " (playing)");
             configAndStartMediaPlayer();
         } else if (mState == State.Playing) {
-        	//mPlayer.stop();
-        	//playNextSong(albumSongs.get(position).getPath());
-        	//setUpAsForeground(mSongTitle + " (playing)");
             configAndStartMediaPlayer();
         }
     }
@@ -263,13 +275,14 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             stopSelf();
         }
     }
-    void processSkipRequest() {
-        if (mState == State.Playing || mState == State.Paused) {
+    void processSkipRequest(int position) {
+        //if (mState == State.Playing || mState == State.Paused) {
             tryToGetAudioFocus();
-            playNextSong(null);
-        }
+            playNextSong(null,position);
+        //}
     }
-    private BroadcastReceiver receiver = new BroadcastReceiver() {
+    
+    private BroadcastReceiver seekReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			Log.i(TAG, "onReceive() service");
@@ -295,22 +308,25 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	}
 	private Runnable sendUpdatesToUI = new Runnable() {
 		public void run() {
-			// // Log.d(TAG, "entered sendUpdatesToUI");
-
 			LogMediaPosition();
-
 			handler.postDelayed(this, 1000); // 2 seconds
-
 		}
 	};
+	private Thread nowPlayingUpdate = new Thread(new Runnable() {
+		@Override
+		public void run() {
+			nowPlayingIntent.putExtra("title", albumSongs.get(currentListPosition).getTitle());
+			sendBroadcast(nowPlayingIntent);
+			nowHandler.post(this);
+			return;
+		}
+	});
 
 	private void LogMediaPosition() {
-		// // Log.d(TAG, "entered LogMediaPosition");
+		//createMediaPlayerIfNeeded();
 		if (mPlayer.isPlaying()) {
 			seekPos = mPlayer.getCurrentPosition();
-			Log.i(TAG, "seekPos "+String.valueOf(seekPos));
 			maxPos = mPlayer.getDuration();
-			Log.i(TAG, "maxPos "+String.valueOf(maxPos));
 			String currentTime = makeTimers(seekPos);
 			String endTime = makeTimers(maxPos);
 			seekIntent.putExtra("counter", seekPos);
@@ -408,28 +424,33 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
      * manualUrl is non-null, then it specifies the URL or path to the song that will be played
      * next.
      */
-    void playNextSong(String manualUrl) {
+    void playNextSong(String manualUrl, int position) {
         mState = State.Stopped;
         //Log.i(TAG, manualUrl);
         relaxResources(false); // release everything except MediaPlayer
 
         try {
             JamSongs playingItem = null;
-            playingItem = albumSongs.get(currentListPosition);
-            if (playingItem == null) {
-                Toast.makeText(this,
-                        "No available music to play. Place some music on your external storage "
-                        + "device (e.g. your SD card) and try again.",
-                        Toast.LENGTH_LONG).show();
-                
-                return;
+            if(manualUrl != null) {
+            	createMediaPlayerIfNeeded();
+            	playingItem = albumSongs.get(currentListPosition);
+            	mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            	Log.i("playItem: ", playingItem.getPath());
+            	mPlayer.setDataSource(getApplicationContext(), Uri.parse(playingItem.getPath()));
+            } else {
+            	playingItem = albumSongs.get(currentListPosition);
+            	Log.i(TAG, playingItem.getTitle());
+            	mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            	 if (playingItem == null) {
+                     Toast.makeText(this,
+                             "No available music to play. Place some music on your external storage "
+                             + "device (e.g. your SD card) and try again.",
+                             Toast.LENGTH_LONG).show();
+                     
+                     return;
+                 }
             }
 
-            // set the source of the media player a a content URI
-            createMediaPlayerIfNeeded();
-            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            Log.i("playItem: ", playingItem.getPath());
-            mPlayer.setDataSource(getApplicationContext(), Uri.parse(playingItem.getPath()));
             
 
             //mSongTitle = playingItem.getTitle();
@@ -437,7 +458,9 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             Caller.getInstance().setCache(null); //API workaround. disables caching.
             Log.i(TAG, albumSongs.get(currentListPosition).getArtist());
             ScrobbleResult result = Track.updateNowPlaying(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), session);
-            Log.i(TAG,("ok: " + (result.isSuccessful() && !result.isIgnored())));
+            int now = (int) (System.currentTimeMillis() / 1000);
+            ScrobbleResult result2 = Track.scrobble(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), now, session);
+            Log.i(TAG,("ok: " + (result2.isSuccessful() && !result2.isIgnored())));
 
 
             mState = State.Preparing;
@@ -465,14 +488,13 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 
     /** Called when media player is done playing current song. */
     public void onCompletion(MediaPlayer player) {
+    	Log.i(TAG,"onCompletion()");
         // The media player finished playing the current song, so we go ahead and start the next.
-        int now = (int) (System.currentTimeMillis() / 1000);
-        ScrobbleResult result = Track.scrobble(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), now, session);
     	int newPos = currentListPosition+1;
     	Log.i(TAG, String.valueOf(newPos));
-    	Log.i(TAG, albumSongs.get(newPos).getPath());
+    	//Log.i(TAG, albumSongs.get(newPos).getPath());
     	if(newPos < albumSongs.size())
-    		playNextSong(albumSongs.get(currentListPosition++).getPath());
+    		playNextSong(albumSongs.get(currentListPosition++).getPath(),newPos);
     	else {
     		player.stop();
     	}
@@ -485,10 +507,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         updateNotification(mSongTitle + " (playing)");
         configAndStartMediaPlayer();
     }
-	@Override
-	public void onBufferingUpdate(MediaPlayer mp, int percent) {
-			
-	}
+
 	public boolean hasConnectivity() {
 	    ConnectivityManager connectivityManager = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 	    NetworkInfo info = connectivityManager.getActiveNetworkInfo();
@@ -576,7 +595,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         // If the flag indicates we should start playing after retrieving, let's do that now.
         if (mStartPlayingAfterRetrieve) {
             tryToGetAudioFocus();
-            playNextSong(mWhatToPlayAfterRetrieve.getPath());
+            playNextSong(mWhatToPlayAfterRetrieve.getPath(),currentListPosition);
         }
     }
 
