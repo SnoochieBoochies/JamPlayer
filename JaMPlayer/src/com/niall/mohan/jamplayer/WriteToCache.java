@@ -88,6 +88,7 @@ public class WriteToCache {
 	                return art;
 	            } catch(FileNotFoundException e) {
 	            	e.printStackTrace();
+	            	return BitmapFactory.decodeResource(context.getResources(), R.drawable.dummy_album_art);
 	            } finally {
 	            	try {
 	            		if(fd != null) {
@@ -95,6 +96,7 @@ public class WriteToCache {
 	            		}
 	            	} catch(IOException e) {
 	            		e.printStackTrace();
+	            		return BitmapFactory.decodeResource(context.getResources(), R.drawable.dummy_album_art);
 	            	}
 	            }
 			}

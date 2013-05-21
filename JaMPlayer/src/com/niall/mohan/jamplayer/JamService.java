@@ -192,6 +192,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     	String action = intent.getAction();
     	currentListPosition = intent.getIntExtra("position", -1);
     	albumSongs = intent.getParcelableArrayListExtra("albumsongs");
+    	Log.i(TAG, String.valueOf(albumSongs.size()));
     	art = intent.getParcelableExtra("art");
     	if(intent.equals(null)) Log.i(TAG, "null intent");
 		if(action.equals(ACTION_PLAY)) processPlayRequest(currentListPosition);
@@ -223,10 +224,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             Log.i(TAG, albumSongs.get(position).getPath());
             mWhatToPlayAfterRetrieve = albumSongs.get(position);
             mStartPlayingAfterRetrieve = true;   
-            Intent in = new Intent(ACTION_NOW_PLAYING);
-            in.putExtra("title", albumSongs.get(position).getTitle());
-            in.putExtra("art", art);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(in);
             return;
         }
         tryToGetAudioFocus();
@@ -276,10 +273,11 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         }
     }
     void processSkipRequest(int position) {
-        //if (mState == State.Playing || mState == State.Paused) {
+        if (mState == State.Playing || mState == State.Paused) {
             tryToGetAudioFocus();
-            playNextSong(null,position);
-        //}
+            //processPlayRequest(position);
+            playNextSong(albumSongs.get(position).getPath(),position);
+        }
     }
     
     private BroadcastReceiver seekReceiver = new BroadcastReceiver() {
@@ -428,7 +426,11 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         mState = State.Stopped;
         //Log.i(TAG, manualUrl);
         relaxResources(false); // release everything except MediaPlayer
-
+       
+        Intent in = new Intent(ACTION_NOW_PLAYING);
+        in.putExtra("title", albumSongs.get(position).getTitle());
+        in.putExtra("art", art);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(in);
         try {
             JamSongs playingItem = null;
             if(manualUrl != null) {
@@ -441,14 +443,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             	playingItem = albumSongs.get(currentListPosition);
             	Log.i(TAG, playingItem.getTitle());
             	mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            	 if (playingItem == null) {
-                     Toast.makeText(this,
-                             "No available music to play. Place some music on your external storage "
-                             + "device (e.g. your SD card) and try again.",
-                             Toast.LENGTH_LONG).show();
-                     
-                     return;
-                 }
             }
 
             

@@ -232,9 +232,14 @@ public class SongList extends ListActivity implements OnClickListener {
 		play.putExtra("position", position);
 		play.putParcelableArrayListExtra("albumsongs", albumSongs);
 		if(am.isMusicActive()) {
+			Log.i(TAG, "doing skip");
 			play.putExtra("action", "skip");
+			play.putExtra("position", position);
+			play.putParcelableArrayListExtra("albumsongs", albumSongs);
+			startActivity(play);
+		} else{
+			startActivity(play);
 		}
-		startActivity(play);				
 		//doPlayPauseButton();
 		super.onListItemClick(l, v, position, id);
 
@@ -250,7 +255,7 @@ public class SongList extends ListActivity implements OnClickListener {
 			//doPlayPauseButton();
 		} else if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
 			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
-			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			//intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 			startActivity(intent);
 		}
 	}
