@@ -18,11 +18,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
 import com.niall.mohan.jamplayer.JamService;
 import com.niall.mohan.jamplayer.MusicRetriever;
 import com.niall.mohan.jamplayer.MusicTable;
+import com.niall.mohan.jamplayer.PrepareMusicRetrieverTask;
 import com.niall.mohan.jamplayer.R;
 
 public class LocalActivity extends ExpandableListActivity implements OnClickListener {
@@ -39,6 +41,7 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 	ImageButton nowPlayingArtBtn;
 	Button nowPlayingTitleBtn;
 	View border;
+	ProgressBar loader;
 	//setup. Get last selected artist/album combo.
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +56,17 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 			currentService = savedInstanceState.getString("selectedservice");
 		}
 		setContentView(R.layout.tab_content_layout);
+		loader = (ProgressBar) findViewById(R.id.local_loader);
+        /*mRetriever = new MusicRetriever(getContentResolver(),this);
+        (new PrepareMusicRetrieverTask(mRetriever) {
+            @Override
+            protected void onPreExecute() {
+               	super.onPreExecute();
+               	loader.setVisibility(View.VISIBLE);
+            }
+        }).execute();
+        */
+        loader.setVisibility(View.GONE);
 		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
 		db = new MusicTable(this);
 		db.open();
@@ -168,5 +182,6 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 			startActivity(intent);
 		}
 	}
+
 	
 }

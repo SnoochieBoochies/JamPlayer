@@ -90,6 +90,7 @@ public class SongList extends ListActivity implements OnClickListener {
 	ImageButton nowPlayingArtBtn;
 	Button nowPlayingTitleBtn;
 	View border;
+	private boolean isPaused;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -101,10 +102,15 @@ public class SongList extends ListActivity implements OnClickListener {
 		setContentView(R.layout.song_list);
 		albumName = (TextView) findViewById(R.id.album_name);
 		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(paused, new IntentFilter(JamService.CHECK_PAUSED));
 		albumName.setOnClickListener(this);
 		db = new MusicTable(this);
 		db.open();
 		fillData();
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		Editor writer = prefs.edit();
+		writer.remove("pause");
+		writer.commit();
 		if (service.equals("google")) {
 			fillUrlData();
 		} else if(service.equals("dropbox")) {
@@ -134,8 +140,19 @@ public class SongList extends ListActivity implements OnClickListener {
 			border.setVisibility(View.VISIBLE);
 		}
 	};
+	private BroadcastReceiver paused = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			isPaused = intent.getBooleanExtra("paused", false);
+			Log.i(TAG, String.valueOf(isPaused));
+			Editor writer = prefs.edit();
+			writer.putBoolean("paused", isPaused);
+			writer.commit();
+		}
+	};
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
+		Log.i(TAG, "onSaveInstanceState");
 		super.onSaveInstanceState(outState);
 	}
 
@@ -231,11 +248,14 @@ public class SongList extends ListActivity implements OnClickListener {
 		play.putExtra("songTitle", c.getString(c.getColumnIndex("title")));
 		play.putExtra("position", position);
 		play.putParcelableArrayListExtra("albumsongs", albumSongs);
-		if(am.isMusicActive()) {
+		isPaused = prefs.getBoolean("paused", false);
+		System.out.println(isPaused);
+		if(am.isMusicActive() || isPaused) {
 			Log.i(TAG, "doing skip");
 			play.putExtra("action", "skip");
 			play.putExtra("position", position);
 			play.putParcelableArrayListExtra("albumsongs", albumSongs);
+			play.putExtra("paused", isPaused);
 			startActivity(play);
 		} else{
 			startActivity(play);

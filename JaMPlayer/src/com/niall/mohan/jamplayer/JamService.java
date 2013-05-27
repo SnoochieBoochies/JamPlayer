@@ -1,26 +1,7 @@
 package com.niall.mohan.jamplayer;
 
 import java.io.IOException;
-
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Currency;
-import java.util.List;
-
-import com.niall.mohan.jamplayer.adapters.JamSongs;
-import com.niall.mohan.jamplayer.tabs.PlayingActivity;
-import com.niall.mohan.jamplayer.tabs.SongList;
-import com.niall.mohan.jamplayer.tabs.SoundcloudActivity;
-
-import de.umass.lastfm.Album;
-import de.umass.lastfm.Artist;
-import de.umass.lastfm.Authenticator;
-import de.umass.lastfm.Caller;
-import de.umass.lastfm.ImageSize;
-import de.umass.lastfm.Result;
-import de.umass.lastfm.Session;
-import de.umass.lastfm.Track;
-import de.umass.lastfm.scrobble.ScrobbleResult;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -28,48 +9,41 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnSeekCompleteListener;
-import android.media.RemoteControlClient;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.media.MediaPlayer.OnSeekCompleteListener;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
-import android.os.Binder;
-import android.os.Bundle;
-import android.os.DeadObjectException;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.PowerManager;
-import android.os.RemoteException;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.v4.content.LocalBroadcastManager;
-import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 import android.util.Log;
-import android.widget.RemoteViews;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
-public class JamService extends Service implements OnCompletionListener, OnPreparedListener,OnErrorListener, OnSeekCompleteListener, MusicFocusable,
-PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
+import com.niall.mohan.jamplayer.adapters.JamSongs;
+import com.niall.mohan.jamplayer.tabs.PlayingActivity;
+
+import de.umass.lastfm.Caller;
+import de.umass.lastfm.Session;
+import de.umass.lastfm.Track;
+import de.umass.lastfm.scrobble.ScrobbleResult;
+
+public class JamService extends Service implements OnCompletionListener,OnBufferingUpdateListener, OnPreparedListener,OnErrorListener, OnSeekCompleteListener,
+MusicFocusable, PrepareMusicRetrieverTask.MusicRetrieverPreparedListener {
 	
 	/*--------------------------------------*/
 	public static ArrayList<JamSongs> albumSongs;
@@ -78,7 +52,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	Intent seekIntent;
 	Intent nowPlayingIntent;
 	private final Handler handler = new Handler();
-	private final Handler nowHandler = new Handler();
 	private String lastFmKey;
 	private String lastFmUser;
 	SharedPreferences prefs;
@@ -94,9 +67,10 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     public static final String ACTION_URL = "com.niall.mohan.jamplayer.action.URL";
     public static final String ACTION_NONE = "com.niall.mohan.jamplayer.action.NONE";
     public static final String ACTION_NOW_PLAYING = "com.niall.mohan.jamplayer.action.NOW_PLAYING";
+    public static final String CHECK_PAUSED = "com.niall.mohan.jamplayer.action.CHECK_PAUSED";
     // The volume we set the media player to when we lose audio focus, but are allowed to reduce
     // the volume instead of stopping playback.
-    public static final float DUCK_VOLUME = 0.1f;
+    public static final float VOLUME = 0.1f;
     MediaPlayer mPlayer = null;
     AudioFocusHelper mAudioFocusHelper = null;
     enum State {
@@ -110,12 +84,8 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     };
     State mState = State.Retrieving;
     boolean mStartPlayingAfterRetrieve = false; 
-    JamSongs mWhatToPlayAfterRetrieve = null;
-    enum PauseReason {
-        UserRequest,  // paused by user request
-        FocusLoss,    // paused because of audio focus loss
-    };
-    PauseReason mPauseReason = PauseReason.UserRequest;
+    JamSongs songToPlayAfterRetrieve = null;
+
     enum AudioFocus {
         NoFocusNoDuck,    // we don't have audio focus, and can't duck
         NoFocusCanDuck,   // we don't have focus, but can play at a low volume ("ducking")
@@ -125,7 +95,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     String mSongTitle = "";
     boolean mIsStreaming = false;  
     WifiLock mWifiLock;
-    final int NOTIFICATION_ID = 1;
+    final int NOTIFICATION_ID = 1; //go to constants
     MusicRetriever mRetriever;
     Bitmap art;
     ComponentName mMediaButtonReceiverComponent;
@@ -133,52 +103,43 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     NotificationManager mNotificationManager;
     Notification mNotification = null;
     static int currentListPosition = -1;
-    public boolean isPlaying = false; //boolean to send over to activity to change buttons
-    long duration;
 
     /**
      * Makes sure the media player exists and has been reset. This will create the media player
      * if needed, or reset the existing media player if one already exists.
      */
     void createMediaPlayerIfNeeded() {
+    	Log.i(TAG, "createMediaPlayerIfNeeded() ");
         if (mPlayer == null) {
+        	Log.i(TAG, "createMediaPlayerIfNeeded() new");
             mPlayer = new MediaPlayer();
-            // Make sure the media player will acquire a wake-lock while playing. If we don't do
-            // that, the CPU might go to sleep while the song is playing, causing playback to stop.
-            // Remember that to use this, we have to declare the android.permission.WAKE_LOCK
-            // permission in AndroidManifest.xml.
             mPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
 
-            // we want the media player to notify us when it's ready preparing, and when it's done
-            // playing:
             mPlayer.setOnPreparedListener(this);
             mPlayer.setOnCompletionListener(this);
             mPlayer.setOnErrorListener(this);
             mPlayer.setOnSeekCompleteListener(this);
+            mPlayer.setOnBufferingUpdateListener(this);
         }
-        else
+        else {
+        	Log.i(TAG, "createMediaPlayerIfNeeded() reset");
             mPlayer.reset();
+        }
     }
     @Override
     public void onCreate() {   	
         Log.i(TAG, "debug: Creating service");
-        // Create the Wifi lock (this does not acquire the lock, this just creates it)
         mWifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
                         .createWifiLock(WifiManager.WIFI_MODE_FULL, "mylock");
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        // Create the retriever and start an asynchronous task that will prepare it.
-        mRetriever = new MusicRetriever(getContentResolver(),this);
-        (new PrepareMusicRetrieverTask(mRetriever,this)).execute();
-        // create the Audio Focus Helper, if the Audio Focus feature is available (SDK 8 or above)
         if (android.os.Build.VERSION.SDK_INT >= 8)
             mAudioFocusHelper = new AudioFocusHelper(getApplicationContext(), this);
         else
             mAudioFocus = AudioFocus.Focused; // no focus feature, so we always "have" audio focus
-        mMediaButtonReceiverComponent = new ComponentName(this, MusicIntentReceiver.class);
-
+        mRetriever = new MusicRetriever(getContentResolver(),this);
+        (new PrepareMusicRetrieverTask(mRetriever,this)).execute();
         seekIntent = new Intent(ACTION_SEEK);
-        nowPlayingIntent = new Intent(ACTION_NOW_PLAYING);
         prefs = PreferenceManager.getDefaultSharedPreferences(JamService.this);
         lastFmKey = prefs.getString("LastFm_Access", "null");
         lastFmUser = prefs.getString("LastFm_User", "null");
@@ -192,10 +153,10 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     	String action = intent.getAction();
     	currentListPosition = intent.getIntExtra("position", -1);
     	albumSongs = intent.getParcelableArrayListExtra("albumsongs");
-    	Log.i(TAG, String.valueOf(albumSongs.size()));
+    	//Log.i(TAG, String.valueOf(albumSongs.size()));
     	art = intent.getParcelableExtra("art");
     	if(intent.equals(null)) Log.i(TAG, "null intent");
-		if(action.equals(ACTION_PLAY)) processPlayRequest(currentListPosition);
+		if(action.equals(ACTION_PLAY)) {processPlayRequest(currentListPosition); Log.i(TAG, "play request");}
 		else if(action.equals(ACTION_STOP)) processStopRequest();
 		else if(action.equals(ACTION_SKIP)) processSkipRequest(currentListPosition);
 		else if(action.equals(ACTION_PAUSE)) processPauseRequest();
@@ -203,11 +164,8 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 
 		else if(action.equals(ACTION_NONE)) onCreate();
     	Log.i(TAG, String.valueOf(currentListPosition));
-		
-		registerReceiver(seekReceiver, new IntentFilter(Constants.BROADCAST_SEEKBAR));    	
-    	setupHandler();
-		
-    	return START_STICKY;
+		registerReceiver(seekReceiver, new IntentFilter(Constants.BROADCAST_SEEKBAR));
+    	return START_NOT_STICKY;
     }
     void processTogglePlaybackRequest() {
         if (mState == State.Paused || mState == State.Stopped) {
@@ -218,12 +176,10 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     }
     private void processPlayRequest(int position) {
     	if (mState == State.Retrieving) {
-            // If we are still retrieving media, just set the flag to start playing when we're
-            // ready
     		Log.i(TAG,"pos "+ String.valueOf(position));
             Log.i(TAG, albumSongs.get(position).getPath());
-            mWhatToPlayAfterRetrieve = albumSongs.get(position);
-            mStartPlayingAfterRetrieve = true;   
+            songToPlayAfterRetrieve = albumSongs.get(position);
+            mStartPlayingAfterRetrieve = true;  
             return;
         }
         tryToGetAudioFocus();
@@ -240,7 +196,16 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             configAndStartMediaPlayer();
         }
     }
-
+    @Override
+    public void onMusicRetrieverPrepared() {
+        // Done retrieving!
+        mState = State.Stopped;
+        // If the flag indicates we should start playing after retrieving, let's do that now.
+        if (mStartPlayingAfterRetrieve) {
+            tryToGetAudioFocus();
+            playNextSong(songToPlayAfterRetrieve.getPath(),currentListPosition);
+        }
+    }
     void processPauseRequest() {
         if (mState == State.Retrieving) {
             // If we are still retrieving media, clear the flag that indicates we should start
@@ -253,6 +218,9 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             mState = State.Paused;
             mPlayer.pause();
             relaxResources(false); // while paused, we always retain the MediaPlayer
+            Intent in = new Intent(CHECK_PAUSED);
+            in.putExtra("paused", true);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(in);
             // do not give up audio focus
         }
     }
@@ -303,6 +271,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	private void setupHandler() {
 		handler.removeCallbacks(sendUpdatesToUI);
 		handler.postDelayed(sendUpdatesToUI, 1000); // 1 second
+		//handler.post(sendUpdatesToUI);
 	}
 	private Runnable sendUpdatesToUI = new Runnable() {
 		public void run() {
@@ -310,19 +279,13 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 			handler.postDelayed(this, 1000); // 2 seconds
 		}
 	};
-	private Thread nowPlayingUpdate = new Thread(new Runnable() {
-		@Override
-		public void run() {
-			nowPlayingIntent.putExtra("title", albumSongs.get(currentListPosition).getTitle());
-			sendBroadcast(nowPlayingIntent);
-			nowHandler.post(this);
-			return;
-		}
-	});
 
 	private void LogMediaPosition() {
 		//createMediaPlayerIfNeeded();
-		if (mPlayer.isPlaying()) {
+		//configAndStartMediaPlayer();
+		if(mPlayer.isPlaying()) {
+			//createMediaPlayerIfNeeded();
+			//configAndStartMediaPlayer();
 			seekPos = mPlayer.getCurrentPosition();
 			maxPos = mPlayer.getDuration();
 			String currentTime = makeTimers(seekPos);
@@ -337,7 +300,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	private String makeTimers(int current) {
 		String endTime = "";
 	    String secondsTime = "";
-		
 		// Convert total duration into time
 	    int hours = (int)( current / (1000*60*60));
 	    int minutes = (int)(current % (1000*60*60)) / (1000*60);
@@ -353,10 +315,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 	    	secondsTime= "" + seconds;
 	    }
 	    endTime = endTime + minutes + ":" + secondsTime;
-	 
-	        // return timer string
-	    return endTime;
-	    
+	    return endTime;    
 	}
 
     /**
@@ -395,6 +354,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
      * you have to do so from a context where you are sure this is the case.
      */
     void configAndStartMediaPlayer() {
+    	Log.i(TAG, "configAndStartMediaPlayer()");
         if (mAudioFocus == AudioFocus.NoFocusNoDuck) {
             // If we don't have audio focus and can't duck, we have to pause, even if mState
             // is State.Playing. But we stay in the Playing state so that we know we have to resume
@@ -403,7 +363,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             return;
         }
         else if (mAudioFocus == AudioFocus.NoFocusCanDuck)
-            mPlayer.setVolume(DUCK_VOLUME, DUCK_VOLUME);  // we'll be relatively quiet
+            mPlayer.setVolume(VOLUME, VOLUME);  // we'll be relatively quiet
         else
             mPlayer.setVolume(1.0f, 1.0f); // we can be loud
 
@@ -411,6 +371,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     }
 
     void tryToGetAudioFocus() {
+    	Log.i(TAG, "tryToGetAudioFocus()");
         if (mAudioFocus != AudioFocus.Focused && mAudioFocusHelper != null
                         && mAudioFocusHelper.requestFocus())
             mAudioFocus = AudioFocus.Focused;
@@ -423,6 +384,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
      * next.
      */
     void playNextSong(String manualUrl, int position) {
+    	Log.i(TAG, "playNextSong");
         mState = State.Stopped;
         //Log.i(TAG, manualUrl);
         relaxResources(false); // release everything except MediaPlayer
@@ -430,46 +392,32 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         Intent in = new Intent(ACTION_NOW_PLAYING);
         in.putExtra("title", albumSongs.get(position).getTitle());
         in.putExtra("art", art);
+        
         LocalBroadcastManager.getInstance(this).sendBroadcast(in);
         try {
             JamSongs playingItem = null;
-            if(manualUrl != null) {
-            	createMediaPlayerIfNeeded();
-            	playingItem = albumSongs.get(currentListPosition);
-            	mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            	Log.i("playItem: ", playingItem.getPath());
-            	mPlayer.setDataSource(getApplicationContext(), Uri.parse(playingItem.getPath()));
-            } else {
-            	playingItem = albumSongs.get(currentListPosition);
-            	Log.i(TAG, playingItem.getTitle());
-            	mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            }
-
-            
+        	createMediaPlayerIfNeeded();
+        	playingItem = albumSongs.get(currentListPosition);
+        	mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        	Log.i("playItem: ", playingItem.getPath());
+        	mPlayer.setDataSource(getApplicationContext(), Uri.parse(playingItem.getPath()));
 
             //mSongTitle = playingItem.getTitle();
             mSongTitle = albumSongs.get(currentListPosition).getArtist()+" - "+albumSongs.get(currentListPosition).getTitle();
-            Caller.getInstance().setCache(null); //API workaround. disables caching.
-            Log.i(TAG, albumSongs.get(currentListPosition).getArtist());
-            ScrobbleResult result = Track.updateNowPlaying(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), session);
-            int now = (int) (System.currentTimeMillis() / 1000);
-            ScrobbleResult result2 = Track.scrobble(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), now, session);
-            Log.i(TAG,("ok: " + (result2.isSuccessful() && !result2.isIgnored())));
+            if(!lastFmKey.equals(null)) {
+	            Caller.getInstance().setCache(null); //API workaround. disables caching.
+	            Log.i(TAG, albumSongs.get(currentListPosition).getArtist());
+	            ScrobbleResult result = Track.updateNowPlaying(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), session);
+	            int now = (int) (System.currentTimeMillis() / 1000);
+	            ScrobbleResult result2 = Track.scrobble(albumSongs.get(currentListPosition).getArtist(), albumSongs.get(currentListPosition).getTitle(), now, session);
+	            Log.i(TAG,("ok: " + (result2.isSuccessful() && !result2.isIgnored())));
+            }
 
 
             mState = State.Preparing;
             setUpAsForeground(mSongTitle + " (loading)");
-
-            // starts preparing the media player in the background. When it's done, it will call
-            // our OnPreparedListener (that is, the onPrepared() method on this class, since we set
-            // the listener to 'this').
-            //
-            // Until the media player is prepared, we *cannot* call start() on it!
+            // Until the media player is prepared, we *cannot* call start() on it! 	
             mPlayer.prepareAsync();
-
-            // If we are streaming from the internet, we want to hold a Wifi lock, which prevents
-            // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
-            // we are *not* streaming, we want to release the lock if we were holding it before.
             if (mIsStreaming) mWifiLock.acquire();
             else if (mWifiLock.isHeld()) mWifiLock.release();
         }
@@ -481,6 +429,7 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
 
 
     /** Called when media player is done playing current song. */
+    @Override
     public void onCompletion(MediaPlayer player) {
     	Log.i(TAG,"onCompletion()");
         // The media player finished playing the current song, so we go ahead and start the next.
@@ -495,31 +444,16 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
     }
 
     /** Called when media player is done preparing. */
+    @Override
     public void onPrepared(MediaPlayer player) {
         // The media player is done preparing. That means we can start playing!
+    	Log.i(TAG, "onPrepared()");
         mState = State.Playing;
         updateNotification(mSongTitle + " (playing)");
         configAndStartMediaPlayer();
+        setupHandler();
     }
 
-	public boolean hasConnectivity() {
-	    ConnectivityManager connectivityManager = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-	    NetworkInfo info = connectivityManager.getActiveNetworkInfo();
-
-	    int netType = info.getType();
-	    int netSubtype = info.getSubtype();
-
-	    if (netType == ConnectivityManager.TYPE_WIFI)
-	    {
-	        return info.isConnected();
-	    }
-	    else if (netType == ConnectivityManager.TYPE_MOBILE && netSubtype == TelephonyManager.NETWORK_TYPE_UMTS)
-	    {
-	        return info.isConnected();
-	    }
-
-	    return false;
-	}
     /** Updates the notification. */
     void updateNotification(String text) {
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
@@ -582,18 +516,6 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
             configAndStartMediaPlayer();
     }
 
-    public void onMusicRetrieverPrepared() {
-        // Done retrieving!
-        mState = State.Stopped;
-
-        // If the flag indicates we should start playing after retrieving, let's do that now.
-        if (mStartPlayingAfterRetrieve) {
-            tryToGetAudioFocus();
-            playNextSong(mWhatToPlayAfterRetrieve.getPath(),currentListPosition);
-        }
-    }
-
-
     @Override
     public void onDestroy() {
         // Service is being killed, so make sure we release our resources
@@ -601,22 +523,19 @@ PrepareMusicRetrieverTask.MusicRetrieverPreparedListener{
         relaxResources(true);
         giveUpAudioFocus();
     }
-    private final IBinder mBinder = new JamBinder();
     @Override
     public IBinder onBind(Intent arg0) {
         return null;
     }
-    public class JamBinder extends Binder {
-    	public JamService getService() {
-    		return JamService.this;
-    	}
-    }
+
 	@Override
 	public void onSeekComplete(MediaPlayer mp) {
-		if(!mPlayer.isPlaying()){
+		if(!mPlayer.isPlaying()) {
 			mPlayer.start();
-			Toast.makeText(this,
-					"SeekComplete", Toast.LENGTH_SHORT).show();
 		}
+	}
+	@Override
+	public void onBufferingUpdate(MediaPlayer arg0, int arg1) {
+		Log.i(TAG,"onBufferingUpdate");
 	}
 }

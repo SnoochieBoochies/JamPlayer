@@ -227,22 +227,23 @@ containing a value of this type.
         public static final int connect_scloud_btn=0x7f060016;
         public static final int control_play_btn=0x7f06000e;
         public static final int currenttime=0x7f060010;
-        public static final int duration=0x7f06001e;
+        public static final int duration=0x7f06001f;
         public static final int each_song=0x7f060009;
         public static final int hybrid=0x7f060004;
         public static final int icon=0x7f060008;
-        public static final int line1=0x7f06001f;
-        public static final int line2=0x7f060020;
-        public static final int menu_settings=0x7f060023;
+        public static final int line1=0x7f060020;
+        public static final int line2=0x7f060021;
+        public static final int local_loader=0x7f06001d;
+        public static final int menu_settings=0x7f060024;
         public static final int none=0x7f060000;
         public static final int normal=0x7f060001;
         public static final int parent_text=0x7f06000a;
         public static final int password=0x7f060006;
-        public static final int play_indicator=0x7f060021;
+        public static final int play_indicator=0x7f060022;
         public static final int progress=0x7f06000d;
-        public static final int refresh=0x7f060024;
+        public static final int refresh=0x7f060025;
         public static final int relativeLayout1=0x7f060019;
-        public static final int relativeLayout2=0x7f06001d;
+        public static final int relativeLayout2=0x7f06001e;
         public static final int satellite=0x7f060002;
         public static final int sd_icon=0x7f060011;
         public static final int sd_message=0x7f060012;
@@ -251,7 +252,7 @@ containing a value of this type.
         public static final int text1=0x7f060017;
         public static final int totaltime=0x7f06000f;
         public static final int username=0x7f060005;
-        public static final int webview=0x7f060022;
+        public static final int webview=0x7f060023;
     }
     public static final class layout {
         public static final int exp_list=0x7f030000;

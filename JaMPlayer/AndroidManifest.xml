@@ -5,7 +5,6 @@
     android:versionName="1.0" 
     >
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <!-- <uses-permission android:name="android.permission.ACCOUNT_MANAGER" />-->
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -25,6 +24,7 @@
         android:theme="@style/MyCustomTheme" >
         <activity
             android:name="com.niall.mohan.jamplayer.tabs.TabsActivity"
+            android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,15 +34,22 @@
         </activity>
         <activity
             android:name="com.niall.mohan.jamplayer.SettingsActivity"
+            android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name">
         </activity>
         <activity 
-            android:name="com.niall.mohan.jamplayer.tabs.LocalActivity"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.DropboxActivity"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.SongList"></activity>
-		<activity android:name="com.niall.mohan.jamplayer.tabs.PlayingActivity"></activity>
+            android:name="com.niall.mohan.jamplayer.tabs.LocalActivity"
+            android:configChanges="keyboardHidden|orientation"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity"
+		    android:configChanges="keyboardHidden|orientation"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.DropboxActivity"
+		    android:configChanges="keyboardHidden|orientation"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity"
+		    android:configChanges="keyboardHidden|orientation"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.SongList"
+		    android:configChanges="keyboardHidden|orientation"></activity>
+		<activity android:name="com.niall.mohan.jamplayer.tabs.PlayingActivity"
+		    android:configChanges="keyboardHidden|orientation"></activity>
 		 <activity
 	      android:name="com.dropbox.client2.android.AuthActivity"
 	      android:launchMode="singleTask"

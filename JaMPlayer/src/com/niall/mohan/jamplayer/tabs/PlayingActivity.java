@@ -1,50 +1,19 @@
 package com.niall.mohan.jamplayer.tabs;
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
-
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import com.google.api.client.http.HttpResponse;
-import com.gracenote.mmid.MobileSDK.GNOperations;
-import com.niall.mohan.jamplayer.Constants;
-import com.niall.mohan.jamplayer.JamService;
-import com.niall.mohan.jamplayer.MusicTable;
-import com.niall.mohan.jamplayer.R;
-import com.niall.mohan.jamplayer.SettingsActivity;
-import com.niall.mohan.jamplayer.WriteToCache;
-import com.niall.mohan.jamplayer.adapters.JamSongs;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.AudioManager;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -52,13 +21,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
+
+import com.niall.mohan.jamplayer.Constants;
+import com.niall.mohan.jamplayer.JamService;
+import com.niall.mohan.jamplayer.MusicTable;
+import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.SettingsActivity;
+import com.niall.mohan.jamplayer.WriteToCache;
+import com.niall.mohan.jamplayer.adapters.JamSongs;
 
 public class PlayingActivity extends Activity implements OnClickListener, OnSeekBarChangeListener{
 	private static String TAG = "PlayingActivity";
@@ -70,8 +45,6 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 	Handler handler;
 	ImageView albumArt;
 	SharedPreferences prefs;
-	long lastSeekTime;
-	long defaultPos = -1;
 	boolean servBound = false;
 	JamService mService;
 	Intent serviceIntent;
@@ -85,6 +58,8 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 	String action;
 	static String artUri;
 	static long albId;
+	private boolean isPaused;
+	WriteToCache cache = new WriteToCache();
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -102,51 +77,72 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 		currentTime = (TextView) findViewById(R.id.currenttime);
 		totalTime = (TextView) findViewById(R.id.totaltime);
 		final Intent receive = getIntent();
-		//ArtLoaderTask task = new ArtLoaderTask();
-		//task.execute(receive);
-		//loader.setVisibility(View.VISIBLE);
+		albumSongs = new ArrayList<JamSongs>();
 		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(paused, new IntentFilter(JamService.CHECK_PAUSED));
 		final WriteToCache cache = new WriteToCache();
 		prefs = PreferenceManager.getDefaultSharedPreferences(PlayingActivity.this);
-		final String tempArtUri = prefs.getString("artwork", "null");
-		Log.i(TAG, "URI "+tempArtUri);
-		final long tempId = prefs.getLong("id", 0);
+		String artUriForPrefs = prefs.getString("artwork", "null");
+		Log.i(TAG, "URI "+artUriForPrefs);
+		long albIdForPrefs = prefs.getLong("id", 0);
+		String act = prefs.getString("skip", "null");
+		int positionPrefs = prefs.getInt("position", 0);
+		Log.i(TAG, String.valueOf(positionPrefs));
 		AudioManager am = (AudioManager) PlayingActivity.this.getSystemService(Context.AUDIO_SERVICE);
-		if(am.isMusicActive()) {
-			action = receive.getStringExtra("action");
-			position = receive.getIntExtra("position", 0);
-			albumSongs = receive.getParcelableArrayListExtra("albumsongs");
-			songName.setText(receive.getStringExtra("songTitle"));
-			artUri = albumSongs.get(position).getArtwork();
-			albId = albumSongs.get(position).getAlbumId();
+		action = receive.getStringExtra("action");
+		position = receive.getIntExtra("position", -1);
+		albumSongs = receive.getParcelableArrayListExtra("albumsongs");
+		isPaused = receive.getBooleanExtra("paused", false);
+		if(am.isMusicActive() || isPaused) {
 			try {
-				art = cache.getArtwork(artUri, albId, getApplicationContext());
-				albumArt.setImageBitmap(art);
+				action = receive.getStringExtra("action");
+				position = receive.getIntExtra("position", 0);
+				albumSongs = receive.getParcelableArrayListExtra("albumsongs");
+				ArrayList<JamSongs> temp = cache.getArrayList();
+				if(temp.equals(albumSongs)) {
+					songName.setText(receive.getStringExtra("songTitle"));
+					artUri = albumSongs.get(position).getArtwork();
+					albId = albumSongs.get(position).getAlbumId();
+					art = cache.getArtwork(artUri, albId, getApplicationContext());
+					albumArt.setImageBitmap(art);
+					if(action.equals("skip")) {
+						Intent skip = new Intent(JamService.ACTION_SKIP);
+						skip.putExtra("position", position);
+						skip.putParcelableArrayListExtra("albumsongs", albumSongs);
+						skip.putExtra("art", art);
+						skip.putExtra("skip", action);
+						Log.i(TAG, "do skip");
+						startService(skip);
+					} else {//else i'm going back into the activity from pressing one of the buttons.
+						songName.setText(prefs.getString("songTitle", ""));
+						final String tempArtUri = prefs.getString("artwork", "null");
+						final long tempId = prefs.getLong("id", 0);
+						Thread mis = new Thread(new Runnable() {
+							@Override
+							public void run() {
+								try {
+									art = cache.getArtwork(tempArtUri, tempId, getApplicationContext());
+									albumArt.setImageBitmap(art);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						});
+						mis.run();
+					}
+					cache.writeArrayList(albumSongs);
+				} else {
+					songName.setText(temp.get(0).getTitle());
+					artUri = temp.get(0).getArtwork();
+					albId = temp.get(0).getAlbumId();
+					art = cache.getArtwork(artUri, albId, getApplicationContext());
+					albumArt.setImageBitmap(art);
+				}
+				
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-			Intent skip = new Intent(JamService.ACTION_SKIP);
-			skip.putExtra("position", position);
-			skip.putParcelableArrayListExtra("albumsongs", albumSongs);
-			skip.putExtra("art", art);
-			if(action.equals("skip")) {
-				Log.i(TAG, "do skip");
-				startService(skip);
-			} else {//else i'm going back into the activity from pressing one of the buttons.
-				songName.setText(prefs.getString("songTitle", ""));
-				Thread mis = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							art = cache.getArtwork(tempArtUri, tempId, getApplicationContext());
-							albumArt.setImageBitmap(art);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
-				});
-				mis.run();
-			}
+			
 		} else {
 			//Intent receive = getIntent();
 			position = receive.getIntExtra("position", 0);
@@ -155,22 +151,20 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 			action = receive.getStringExtra("action");
 			artUri = albumSongs.get(position).getArtwork();
 			albId = albumSongs.get(position).getAlbumId();
-			Thread artWorkTask = new Thread(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						//loader.setVisibility(View.VISIBLE);
-						art = cache.getArtwork(artUri, albId, getApplicationContext());
-						
-						albumArt.setImageBitmap(art);
-						//loader.setVisibility(View.GONE);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}		
-				}
-			});
-			artWorkTask.run();
+
+			try {
+				art = cache.getArtwork(artUri, albId, getApplicationContext());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			albumArt.setImageBitmap(art);
+			
 		}
+		Editor writer = prefs.edit();
+		writer.putString("artwork", artUri);
+		writer.putLong("id", albId);
+		writer.putString("skip", action);	
+		writer.commit();
 		//loader.setVisibility(View.GONE);
 		db = new MusicTable(this);
 		db.open();
@@ -190,6 +184,13 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 			//Log.i(TAG, "onReceiver google");
 			Log.i(TAG, intent.getStringExtra("title"));
 			songName.setText(intent.getStringExtra("title"));
+		}
+	};
+	private BroadcastReceiver paused = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			isPaused = intent.getBooleanExtra("paused", false);
+			Log.i(TAG, String.valueOf(isPaused));
 		}
 	};
 	@Override
@@ -216,6 +217,7 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 	@Override
 	protected void onPause() {
 		super.onPause();
+		Log.i(TAG, "onPause");
 		unregisterReceiver(seekReceiver);
 	}
 	@Override
@@ -254,13 +256,10 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 
 	@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {
-		lastSeekTime = 0;
-		
 	}
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-		defaultPos = -1;
 	}
 
 	@Override

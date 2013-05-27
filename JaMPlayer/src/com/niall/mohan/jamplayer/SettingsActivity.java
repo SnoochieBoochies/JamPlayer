@@ -74,7 +74,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	EditText last_fm_username;
 	EditText last_fm_pswd;
 	ProgressBar progress;
-	ProgressDialog dropboxProgress;
     private static final String YOUR_APP_CONSUMER_KEY = "9ba8dd1f82ad58e8470b3e5a69cc828c";
     private static final String YOUR_APP_CONSUMER_SECRET = "9269708fca324437b41fb738fb78a5f7";
     final static private String APP_KEY = "7d5b3w41ptwxz3t";
@@ -85,9 +84,9 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
     final static private String GRACENOTE_KEY = "13046016-57E031D9977B0F9F9DECABBC977DE50B";
     private boolean mLoggedIn;
-	public DropboxAPI<AndroidAuthSession> mApi;
+	public DropboxAPI<AndroidAuthSession> dApi;
     SharedPreferences preferences;
-	GoogleMusicApi api;
+	GoogleMusicApi gApi;
 	MusicTable tb;
 	Token sCloudtoken;
 	private static final int GPLAY = 1;
@@ -283,7 +282,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 		}
 		progress = (ProgressBar) findViewById(R.id.progress);
 		AndroidAuthSession session = buildSession();
-        mApi = new DropboxAPI<AndroidAuthSession>(session);
+        dApi = new DropboxAPI<AndroidAuthSession>(session);
         newFolder = new WriteToCache();
 		connectGplay.setOnClickListener(new OnClickListener() {
 			//need to check after auth() is the database already occupied and are there any changes.
@@ -299,7 +298,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 					logOut();
 				}else {
                     // Start the remote authentication
-					mApi.getSession().startAuthentication(SettingsActivity.this);
+					dApi.getSession().startAuthentication(SettingsActivity.this);
                 }
 			}
 			
@@ -348,7 +347,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	/*----------------DROPBOX----------------------*/
 	private void logOut() {
         // Remove credentials from the session
-        mApi.getSession().unlink();
+        dApi.getSession().unlink();
 
         // Clear our stored keys
        // clearKeys();
@@ -405,7 +404,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     protected void onResume() {
         super.onResume();
         //store our tokens in here after all or any of the authorisations are completed.
-        AndroidAuthSession session = mApi.getSession();
+        AndroidAuthSession session = dApi.getSession();
         // The next part must be inserted in the onResume() method of the
         // activity from which session.startAuthentication() was called, so
         // that Dropbox authentication completes properly.

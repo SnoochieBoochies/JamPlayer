@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<class-diagram version="1.1.2" icons="true" automaticImage="JPEG" always-add-relationships="false" 
+  generalizations="true" realizations="true" associations="true" dependencies="true" nesting-relationships="true">  
+  <class id="1" language="java" name="com.niall.mohan.jamplayer.JamService" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/JamService.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="1323" width="277" x="146" y="2321"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="2" language="java" name="com.niall.mohan.jamplayer.MusicTable" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/MusicTable.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="639" width="262" x="216" y="4039"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="3" language="java" name="com.niall.mohan.jamplayer.PrepareMusicRetrieverTask" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/PrepareMusicRetrieverTask.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="189" width="395" x="291" y="3684"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="4" language="java" name="com.niall.mohan.jamplayer.SettingsActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/SettingsActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="909" width="225" x="747" y="2321"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="5" language="java" name="com.niall.mohan.jamplayer.WriteToCache" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/WriteToCache.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="189" width="215" x="1073" y="3684"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="6" language="java" name="com.niall.mohan.jamplayer.adapters.GPlaySongAdapter" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/adapters/GPlaySongAdapter.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="117" width="173" x="770" y="5523"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="7" language="java" name="com.niall.mohan.jamplayer.adapters.JamSongs" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/adapters/JamSongs.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="765" width="366" x="146" y="4718"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="8" language="java" name="com.niall.mohan.jamplayer.tabs.DropboxActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/DropboxActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="513" width="309" x="392" y="356"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="9" language="java" name="com.niall.mohan.jamplayer.tabs.GooglePlayActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/GooglePlayActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="193" y="550"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="10" language="java" name="com.niall.mohan.jamplayer.tabs.LocalActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/LocalActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="459" width="309" x="741" y="356"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="11" language="java" name="com.niall.mohan.jamplayer.tabs.PlayingActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/PlayingActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="711" width="251" x="526" y="1570"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="12" language="java" name="com.niall.mohan.jamplayer.tabs.SongList" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/SongList.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="621" width="234" x="189" y="909"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="13" language="java" name="com.niall.mohan.jamplayer.tabs.SoundcloudActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/SoundcloudActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="567" width="234" x="1033" y="909"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="14" language="java" name="com.niall.mohan.jamplayer.tabs.TabsActivity" project="JaMPlayer" 
+    file="/JaMPlayer/src/com/niall/mohan/jamplayer/tabs/TabsActivity.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="279" width="230" x="1071" y="37"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" accessors="true" 
+      visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <dependency id="15">    
+    <end type="SOURCE" refId="2"/>    
+    <end type="TARGET" refId="7"/>  
+  </dependency>  
+  <dependency id="16">    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="10"/>  
+  </dependency>  
+  <dependency id="17">    
+    <bendpoint x="779" y="3684"/>    
+    <bendpoint x="779" y="4039"/>    
+    <bendpoint x="779" y="4718"/>    
+    <end type="SOURCE" refId="4"/>    
+    <end type="TARGET" refId="6"/>  
+  </dependency>  
+  <dependency id="18">    
+    <bendpoint x="1297" y="356"/>    
+    <bendpoint x="1297" y="909"/>    
+    <bendpoint x="1297" y="1570"/>    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="4"/>  
+  </dependency>  
+  <association id="19">    
+    <bendpoint x="155" y="3684"/>    
+    <bendpoint x="155" y="4039"/>    
+    <end type="SOURCE" refId="1" navigable="false">      
+      <attribute id="20" name="songToPlayAfterRetrieve"/>      
+      <multiplicity id="21" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="7" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="22">    
+    <end type="SOURCE" refId="3" navigable="false">      
+      <attribute id="23" name="db"/>      
+      <multiplicity id="24" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="2" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="25">    
+    <end type="SOURCE" refId="6"/>    
+    <end type="TARGET" refId="7"/>  
+  </generalization>  
+  <dependency id="26">    
+    <bendpoint x="158" y="909"/>    
+    <bendpoint x="158" y="1570"/>    
+    <end type="SOURCE" refId="8"/>    
+    <end type="TARGET" refId="1"/>  
+  </dependency>  
+  <dependency id="27">    
+    <end type="SOURCE" refId="11"/>    
+    <end type="TARGET" refId="4"/>  
+  </dependency>  
+  <association id="28">    
+    <bendpoint x="474" y="2321"/>    
+    <bendpoint x="197" y="3684"/>    
+    <bendpoint x="185" y="4039"/>    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="29" name="albumSongs"/>      
+      <multiplicity id="30" minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" refId="7" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="31">    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="32" name="mService"/>      
+      <multiplicity id="33" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="1" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency id="34">    
+    <end type="SOURCE" refId="1"/>    
+    <end type="TARGET" refId="3"/>  
+  </dependency>  
+  <dependency id="35">    
+    <bendpoint x="1023" y="2321"/>    
+    <end type="SOURCE" refId="11"/>    
+    <end type="TARGET" refId="5"/>  
+  </dependency>  
+  <association id="36">    
+    <bendpoint x="495" y="2321"/>    
+    <bendpoint x="260" y="3684"/>    
+    <end type="SOURCE" refId="11" navigable="false">      
+      <attribute id="37" name="db"/>      
+      <multiplicity id="38" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="2" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency id="39">    
+    <bendpoint x="1080" y="356"/>    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="13"/>  
+  </dependency>  
+  <association id="40">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="41" name="newFolder"/>      
+      <multiplicity id="42" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="43">    
+    <bendpoint x="737" y="3684"/>    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="44" name="tb"/>      
+      <multiplicity id="45" minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" refId="2" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="46">    
+    <bendpoint x="134" y="3684"/>    
+    <bendpoint x="134" y="4039"/>    
+    <end type="SOURCE" refId="1" navigable="false">      
+      <attribute id="47" name="albumSongs"/>      
+      <multiplicity id="48" minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" refId="7" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency id="49">    
+    <bendpoint x="758" y="3684"/>    
+    <bendpoint x="758" y="4039"/>    
+    <end type="SOURCE" refId="4"/>    
+    <end type="TARGET" refId="7"/>  
+  </dependency>  
+  <dependency id="50">    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="8"/>  
+  </dependency>  
+  <dependency id="51">    
+    <end type="SOURCE" refId="14"/>    
+    <end type="TARGET" refId="9"/>  
+  </dependency>  
+  <classifier-display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" 
+    accessors="true" visibility="true">    
+    <attributes public="true" package="true" protected="true" private="true"/>    
+    <operations public="true" package="true" protected="true" private="true"/>  
+  </classifier-display>  
+  <association-display labels="true" multiplicity="true"/>
+</class-diagram>

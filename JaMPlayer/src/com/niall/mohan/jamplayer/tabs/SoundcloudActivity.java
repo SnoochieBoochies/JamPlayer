@@ -61,11 +61,6 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 	TextView subListName; 
 	ArrayAdapter<JamSongs> adapter;
 	ProgressDialog progress;
-	SeekBar seekbar;
-	TextView currentTime;
-	TextView totalTime;
-	Intent serviceIntent;
-	Intent in;
 	long defaultPos = -1;
 	int seekMax;
 	long lastSeekTime;
@@ -98,21 +93,7 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 		super.onResume();
 		//fillData();
 	}
-	private BroadcastReceiver receiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Log.i(TAG, "onReceive()");
-			int counter = intent.getIntExtra("counter", 0);
-			int mediamax = intent.getIntExtra("mediamax", 0);
-			// int seekProgress = Integer.parseInt(counter);
-			Log.i(TAG, String.valueOf(counter) + ":" + String.valueOf(mediamax));
-			seekMax = mediamax;
-			currentTime.setText(intent.getStringExtra("currentTime"));
-			totalTime.setText(intent.getStringExtra("endTime"));
-			seekbar.setMax(seekMax);
-			seekbar.setProgress(counter);
-		}
-	};
+
 	private void fillData() {
 		sCloudSongs= new ArrayList<JamSongs>();
 		SoundCloudSongTask sCloudTask = new SoundCloudSongTask(wrapper);
@@ -128,10 +109,20 @@ public class SoundcloudActivity extends ListActivity implements  OnClickListener
 		Log.i(TAG, String.valueOf(c.getItem(position)));
 		Uri uri = Uri.parse("content://media/external/audio/albumart");
 		Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
+		AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
 		play.putExtra("songTitle", String.valueOf(c.getItem(position)));
 		play.putExtra("position", position);
 		play.putParcelableArrayListExtra("albumsongs", sCloudSongs);
-		startActivity(play);
+		if(am.isMusicActive()) {
+			Log.i(TAG, "doing skip");
+			play.putExtra("action", "skip");
+			play.putExtra("position", position);
+			play.putParcelableArrayListExtra("albumsongs", sCloudSongs);
+			startActivity(play);
+		} else{
+			startActivity(play);
+		}
+		
 		//Intent intent = new Intent(JamService.ACTION_PLAY);
 		//intent.putExtra("position", position);
 		//intent.putParcelableArrayListExtra("albumsongs", sCloudSongs);
