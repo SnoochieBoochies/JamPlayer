@@ -89,61 +89,62 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 		int positionPrefs = prefs.getInt("position", 0);
 		Log.i(TAG, String.valueOf(positionPrefs));
 		AudioManager am = (AudioManager) PlayingActivity.this.getSystemService(Context.AUDIO_SERVICE);
-		action = receive.getStringExtra("action");
-		position = receive.getIntExtra("position", -1);
-		albumSongs = receive.getParcelableArrayListExtra("albumsongs");
-		isPaused = receive.getBooleanExtra("paused", false);
 		if(am.isMusicActive() || isPaused) {
+			
 			try {
+				
 				action = receive.getStringExtra("action");
 				position = receive.getIntExtra("position", 0);
-				albumSongs = receive.getParcelableArrayListExtra("albumsongs");
-				ArrayList<JamSongs> temp = cache.getArrayList();
-				if(temp.equals(albumSongs)) {
+				//albumSongs = receive.getParcelableArrayListExtra("albumsongs");
+				albumSongs = cache.getArrayList();
+				if(albumSongs.size() > 0) {
+					Log.i(TAG, "albumSongs not empty");
 					songName.setText(receive.getStringExtra("songTitle"));
 					artUri = albumSongs.get(position).getArtwork();
 					albId = albumSongs.get(position).getAlbumId();
 					art = cache.getArtwork(artUri, albId, getApplicationContext());
 					albumArt.setImageBitmap(art);
-					if(action.equals("skip")) {
-						Intent skip = new Intent(JamService.ACTION_SKIP);
-						skip.putExtra("position", position);
-						skip.putParcelableArrayListExtra("albumsongs", albumSongs);
-						skip.putExtra("art", art);
-						skip.putExtra("skip", action);
-						Log.i(TAG, "do skip");
-						startService(skip);
-					} else {//else i'm going back into the activity from pressing one of the buttons.
-						songName.setText(prefs.getString("songTitle", ""));
-						final String tempArtUri = prefs.getString("artwork", "null");
-						final long tempId = prefs.getLong("id", 0);
-						Thread mis = new Thread(new Runnable() {
-							@Override
-							public void run() {
-								try {
-									art = cache.getArtwork(tempArtUri, tempId, getApplicationContext());
-									albumArt.setImageBitmap(art);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-							}
-						});
-						mis.run();
-					}
-					cache.writeArrayList(albumSongs);
 				} else {
-					songName.setText(temp.get(0).getTitle());
-					artUri = temp.get(0).getArtwork();
-					albId = temp.get(0).getAlbumId();
+					songName.setText(albumSongs.get(0).getTitle());
+					artUri = albumSongs.get(0).getArtwork();
+					albId = albumSongs.get(0).getAlbumId();
 					art = cache.getArtwork(artUri, albId, getApplicationContext());
 					albumArt.setImageBitmap(art);
+					action ="";
+					
 				}
-				
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 			
+			if(action.equals("skip")) {
+				Intent skip = new Intent(JamService.ACTION_SKIP);
+				skip.putExtra("position", position);
+				skip.putParcelableArrayListExtra("albumsongs", albumSongs);
+				skip.putExtra("art", art);
+				skip.putExtra("skip", action);
+				Log.i(TAG, "do skip");
+				startService(skip);
+			} else {//else i'm going back into the activity from pressing one of the buttons.
+				Log.i(TAG, "else after click");
+				songName.setText(prefs.getString("songTitle", ""));
+				final String tempArtUri = prefs.getString("artwork", "null");
+				final long tempId = prefs.getLong("id", 0);
+				Thread mis = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							art = cache.getArtwork(tempArtUri, tempId, getApplicationContext());
+							albumArt.setImageBitmap(art);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				});
+				mis.run();
+			}
 		} else {
+			Log.i(TAG, "else regular");
 			//Intent receive = getIntent();
 			position = receive.getIntExtra("position", 0);
 			albumSongs = receive.getParcelableArrayListExtra("albumsongs");
@@ -151,7 +152,13 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 			action = receive.getStringExtra("action");
 			artUri = albumSongs.get(position).getArtwork();
 			albId = albumSongs.get(position).getAlbumId();
-
+			cache.writeArrayList(albumSongs);
+			Editor writer = prefs.edit();
+			writer.putString("artwork", artUri);
+			writer.putLong("id", albId);
+			writer.putString("skip", action);
+			writer.putInt("position", position);
+			writer.commit();
 			try {
 				art = cache.getArtwork(artUri, albId, getApplicationContext());
 			} catch (IOException e) {
@@ -160,11 +167,6 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 			albumArt.setImageBitmap(art);
 			
 		}
-		Editor writer = prefs.edit();
-		writer.putString("artwork", artUri);
-		writer.putLong("id", albId);
-		writer.putString("skip", action);	
-		writer.commit();
 		//loader.setVisibility(View.GONE);
 		db = new MusicTable(this);
 		db.open();

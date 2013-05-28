@@ -109,7 +109,7 @@ public class SongList extends ListActivity implements OnClickListener {
 		fillData();
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 		Editor writer = prefs.edit();
-		writer.remove("pause");
+		writer.remove("paused");
 		writer.commit();
 		if (service.equals("google")) {
 			fillUrlData();
@@ -250,7 +250,7 @@ public class SongList extends ListActivity implements OnClickListener {
 		play.putParcelableArrayListExtra("albumsongs", albumSongs);
 		isPaused = prefs.getBoolean("paused", false);
 		System.out.println(isPaused);
-		if(am.isMusicActive() || isPaused) {
+		if(am.isMusicActive() || isPaused == true) {
 			Log.i(TAG, "doing skip");
 			play.putExtra("action", "skip");
 			play.putExtra("position", position);
