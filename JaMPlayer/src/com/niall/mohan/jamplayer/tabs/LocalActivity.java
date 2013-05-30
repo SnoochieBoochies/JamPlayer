@@ -1,5 +1,7 @@
 package com.niall.mohan.jamplayer.tabs;
 
+import java.util.ArrayList;
+
 import android.app.ExpandableListActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -18,15 +20,18 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
-import com.niall.mohan.jamplayer.JamService;
+import com.niall.mohan.jamplayer.Constants;
 import com.niall.mohan.jamplayer.MusicRetriever;
 import com.niall.mohan.jamplayer.MusicTable;
-import com.niall.mohan.jamplayer.PrepareMusicRetrieverTask;
 import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.adapters.JamSongs;
 
+/*This is the Local tab activity. It works the same as the other tabs, GooglePlayActivity
+ * & DropboxActivity.
+ * The expandablelist is constructed from retrieving songs from the DB.
+ * */
 public class LocalActivity extends ExpandableListActivity implements OnClickListener {
 	private static String TAG = "LocalActivity";
 	private ArtistAlbumListAdapter adapter;
@@ -41,11 +46,10 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 	ImageButton nowPlayingArtBtn;
 	Button nowPlayingTitleBtn;
 	View border;
-	ProgressBar loader;
+	ArrayList<JamSongs> albumSongs;
 	//setup. Get last selected artist/album combo.
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		//startService(new Intent(this,JamService.class));
 		super.onCreate(savedInstanceState);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		if(savedInstanceState != null) {
@@ -56,21 +60,11 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 			currentService = savedInstanceState.getString("selectedservice");
 		}
 		setContentView(R.layout.tab_content_layout);
-		loader = (ProgressBar) findViewById(R.id.local_loader);
-        /*mRetriever = new MusicRetriever(getContentResolver(),this);
-        (new PrepareMusicRetrieverTask(mRetriever) {
-            @Override
-            protected void onPreExecute() {
-               	super.onPreExecute();
-               	loader.setVisibility(View.VISIBLE);
-            }
-        }).execute();
-        */
-        loader.setVisibility(View.GONE);
-		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(Constants.ACTION_NOW_PLAYING));
 		db = new MusicTable(this);
 		db.open();
 		fillData();
+
 	}
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
@@ -91,6 +85,10 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 	protected void onDestroy() {
 		db.close();
 		super.onDestroy();
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
 	}
 	
 	private void fillData() {
@@ -128,6 +126,7 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 		startActivity(intent);
 		return true;
 	}
+	/*Class that populates the expandable list.*/
 	private class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
 
 		public ArtistAlbumListAdapter(Cursor cursor, Context context,
@@ -137,11 +136,9 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
                         childLayout, childrenFrom, childrenTo);
 		}
 
-
-
 		@Override
 		protected Cursor getChildrenCursor(Cursor groupCursor) {
-			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("service")),groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
+			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("service")),groupCursor.getString(groupCursor.getColumnIndex("artist")));
 			startManagingCursor(albumCursor);
 			//albumCursor.moveToFirst();
 			return albumCursor;
@@ -158,7 +155,7 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.i(TAG, "onReceiver google");
+			Log.i(TAG, "Local receive");
 			Log.i(TAG, intent.getStringExtra("title"));
 			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
 			nowPlayingArtBtn.setVisibility(View.VISIBLE);
@@ -172,6 +169,7 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 			nowPlayingTitleBtn.setOnClickListener(LocalActivity.this);
 			border = (View) findViewById(R.id.border);
 			border.setVisibility(View.VISIBLE);
+			albumSongs = intent.getParcelableArrayListExtra("albumsongs");
 		}
 	};
 	@Override
@@ -179,6 +177,10 @@ public class LocalActivity extends ExpandableListActivity implements OnClickList
 		if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
 			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
 			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			intent.putExtra("takeFromPrefs", true);
+			intent.putExtra("position", 0);
+			intent.putExtra("songTitle", nowPlayingTitleBtn.getText().toString());
+			intent.putParcelableArrayListExtra("albumsongs", albumSongs);
 			startActivity(intent);
 		}
 	}

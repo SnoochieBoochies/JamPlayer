@@ -1,22 +1,19 @@
 package com.niall.mohan.jamplayer;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.niall.mohan.jamplayer.adapters.JamSongs;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
-import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import com.niall.mohan.jamplayer.adapters.JamSongs;
+
+/* This class handles all of the database insertions and queries.*/
 public class MusicTable {
 	public static final String TAG = "MediaSqlite";
 	private static final String DB_NAME = "jam_player.db";
@@ -70,16 +67,13 @@ public class MusicTable {
 		} else return dbHelper;
 	}
 
+	/*The insert operation*/
 	public void insert(JamSongs info) {
-		//Log.i(TAG,info._title);
 		Cursor cursor = query(info.getTitle(), 1,info.getService());
-		//Log.i("INFO", info.title);
 		if(cursor.getCount() != 0) {
 			cursor.close();
-			Log.i(TAG,"cursor is not empty " + cursor.getCount());
 			return;
 		}
-		Log.i(TAG,"cursor is empty");
 		cursor.close();
 		SQLiteDatabase db = dbHelper.getWritableDatabase();
 		ContentValues values = setInfo(info);
@@ -115,7 +109,9 @@ public class MusicTable {
 		// database.close();
 		return cursor;
 	}
-
+	/*Sets the params of a JamSongs object into a ContentValues, then gets
+	 * inserted into the DB.
+	*/
 	private ContentValues setInfo(JamSongs mediaInfo) {
 		ContentValues values = new ContentValues();
 		values.put(TITLE, mediaInfo.getTitle());
@@ -131,9 +127,8 @@ public class MusicTable {
 		return values;
 	}
 
-
+	/*-------Query operations for artists/albums/songs.--------------*/
 	public Cursor getArtistsByService(String service) {
-		this.service = service;
 		db = dbHelper.getReadableDatabase();
 		Log.w(TAG,"service = "+service);
 		Cursor mCursor = null;
@@ -189,17 +184,9 @@ public class MusicTable {
 		db.close();
 		return mCursor;
 	}
-	public String getArtwork(String service, String artist, String album, String song) {
-		db = dbHelper.getReadableDatabase();
-		Cursor mCursor = null;
-		mCursor = db.query(true, TABLE_NAME, new String [] {_ID,ARTWORK_URI,SERVICE_TYPE}, SELECTION[6]+" like '%"+service+"%' AND "+SELECTION[3]
-				+ " like '%"+artist+"%' AND "+SELECTION[2] + " like '%"+album+"%' AND "+ SELECTION[1]+" like '%"+song+"%'", null, null, null, null, null);
-		if(mCursor != null) {
-			mCursor.moveToFirst();
-			Log.i(TAG,mCursor.getString(mCursor.getColumnIndex(ARTWORK_URI)));
-		}
-		return "";
-	}
+	/*----------------end of query operations----------------------*/
+	/*This inner class represents the actual creation/upgrade of the Database from
+	 * extending SQLiteOpenHelper*/
 	private static class MusicDbHelper extends SQLiteOpenHelper {
 
 		private Context context;

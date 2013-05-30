@@ -1,39 +1,12 @@
 package com.niall.mohan.jamplayer.tabs;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.DropboxAPI.DropboxLink;
-import com.dropbox.client2.DropboxAPI.Entry;
-import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.session.AccessTokenPair;
-import com.dropbox.client2.session.AppKeyPair;
-import com.gracenote.mmid.MobileSDK.GNConfig;
-import com.gracenote.mmid.MobileSDK.GNDescriptor;
-import com.gracenote.mmid.MobileSDK.GNOperationStatusChanged;
-import com.gracenote.mmid.MobileSDK.GNOperations;
-import com.gracenote.mmid.MobileSDK.GNSearchResponse;
-import com.gracenote.mmid.MobileSDK.GNSearchResult;
-import com.gracenote.mmid.MobileSDK.GNSearchResultReady;
-import com.gracenote.mmid.MobileSDK.GNStatus;
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-import com.niall.mohan.jamplayer.Constants;
-import com.niall.mohan.jamplayer.JamService;
-import com.niall.mohan.jamplayer.MusicTable;
-import com.niall.mohan.jamplayer.R;
-import com.niall.mohan.jamplayer.WriteToCache;
-import com.niall.mohan.jamplayer.adapters.JamSongs;
 
 import android.app.ExpandableListActivity;
 import android.app.ProgressDialog;
@@ -58,8 +31,35 @@ import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.SimpleCursorTreeAdapter;
+import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.DropboxLink;
+import com.dropbox.client2.DropboxAPI.Entry;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.exception.DropboxException;
+import com.dropbox.client2.session.AccessTokenPair;
+import com.dropbox.client2.session.AppKeyPair;
+import com.gracenote.mmid.MobileSDK.GNConfig;
+import com.gracenote.mmid.MobileSDK.GNOperationStatusChanged;
+import com.gracenote.mmid.MobileSDK.GNOperations;
+import com.gracenote.mmid.MobileSDK.GNSearchResponse;
+import com.gracenote.mmid.MobileSDK.GNSearchResult;
+import com.gracenote.mmid.MobileSDK.GNSearchResultReady;
+import com.gracenote.mmid.MobileSDK.GNStatus;
+import com.niall.mohan.jamplayer.Constants;
+import com.niall.mohan.jamplayer.MusicTable;
+import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.WriteToCache;
+import com.niall.mohan.jamplayer.adapters.JamSongs;
+
+/*This is the Dropbox tab activity. It has inner classes that do the 
+ * PCM recognition in an Async task, which then kicks off another thread since it's a heavy operation.
+ * Like all tab activities. It has a receiver for now-playing, in which to construct the banner at the bottom.
+ * The recognition only occurs once. Sync hasn't been implemented. After the recognition,
+ * everytime the activity is created it receives the artist/album stuff from the DB (like all tabs, except Soundcloud.)
+ * */
 public class DropboxActivity extends ExpandableListActivity implements OnClickListener  {
 	private static String TAG = "DropboxActivity";
 	public static ArtistAlbumListAdapter adapter;
@@ -94,7 +94,7 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 
 		}
 		setContentView(R.layout.tab_content_layout);
-		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(Constants.ACTION_NOW_PLAYING));
 		prefs = getSharedPreferences(Constants.ACCOUNT_PREFS_NAME, 0);
 		key = prefs.getString(Constants.ACCESS_KEY_NAME, null);
 		String secret = prefs.getString(Constants.ACCESS_SECRET_NAME, null);
@@ -154,7 +154,7 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.i(TAG, "onReceiver google");
+			Log.i(TAG, "onReceiver Dropbox");
 			Log.i(TAG, intent.getStringExtra("title"));
 			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
 			nowPlayingArtBtn.setVisibility(View.VISIBLE);
@@ -168,13 +168,19 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 			nowPlayingTitleBtn.setOnClickListener(DropboxActivity.this);
 			border = (View) findViewById(R.id.border);
 			border.setVisibility(View.VISIBLE);
+			albumSongs = intent.getParcelableArrayListExtra("albumsongs");
 		}
 	};
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if(key != null)
+		if(key != null) {
 			fillData();
+		}
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
 	}
 	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
@@ -198,7 +204,10 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 		startActivity(intent);
 		return true;
 	}
-	public class DropboxSongsTask extends AsyncTask<Void, Void, Boolean> {
+	/*the inner class that downloads 30s of each dropbox song and uses Gracenote's pcm facilities. the
+	 * results are entered into the DB.
+	 * */
+	private class DropboxSongsTask extends AsyncTask<Void, Void, Boolean> {
 		@Override
 		protected void onPreExecute() {
 			dropboxProgress = ProgressDialog.show(DropboxActivity.this, "", "Constructing Dropbox Songs. \n" +
@@ -235,10 +244,8 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 				            	} 
 				            }
 						}catch (DropboxException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						} catch (IOException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
 					}
@@ -247,13 +254,14 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 	            graceNoteThread.run();
 	            success = true;
 			} catch (DropboxException e2) {
-				// TODO Auto-generated catch block
 				e2.printStackTrace();
 			}  
 			return success;
 		}
 		
 	}
+	/*Class that populates the expandable list.*/
+
 	private class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
 
 		public ArtistAlbumListAdapter(Cursor cursor, Context context,
@@ -265,7 +273,7 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 
 		@Override
 		protected Cursor getChildrenCursor(Cursor groupCursor) {
-			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("service")),groupCursor.getString(groupCursor.getColumnIndex("artist")));// = db.getArtistsByService("local");
+			Cursor albumCursor = db.getArtistsAlbumsByService(groupCursor.getString(groupCursor.getColumnIndex("service")),groupCursor.getString(groupCursor.getColumnIndex("artist")));
 			startManagingCursor(albumCursor);
 			//albumCursor.moveToFirst();
 			return albumCursor;
@@ -280,12 +288,15 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 		}
 
 	}
-	public class RecognizePCMStreamTask implements GNSearchResultReady, GNOperationStatusChanged {
+
+	/*The inner class that implements Gracenote API interfaces for the PCM recognition results.
+	 * The results are entered into the DB from this class.
+	 * */
+	private class RecognizePCMStreamTask implements GNSearchResultReady, GNOperationStatusChanged {
     	GNConfig mconfig;
     	String songPath;
+    	//the downloading of an mp3
     	public void recognisePcmStream(String url, String dropboxPath) throws IOException {
-    		//GNSampleBuffer buffer = loadSamplePCM();
-    		//GNOperations.recognizeMIDFileFromPcm(this, config, buffer);
     		Log.i(TAG, url);
     		File file = new File(newFolder.getAlbumStorageDir()+"/temp.mp3");
     	    if(file.exists()) {
@@ -310,6 +321,7 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
     	    if(file.exists()) {
     	    	Log.i(TAG, "temp.mp3 exists!");
     	    	songPath = dropboxPath;
+    	    	//the API handles the PCM conversion. I had my own decoder but I presume this API has a faster version...
     	    	GNOperations.recognizeMIDFileFromFile(this, config, newFolder.getAlbumStorageDir()+"/temp.mp3");
     	    }
     	    con.disconnect();    	    	    
@@ -317,19 +329,20 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
     	}
 		@Override
 		public void GNStatusChanged(GNStatus status) {
-			// TODO Auto-generated method stub
 			Log.i(TAG, "GNStatusChanged() "+ status.getMessage());
-			//updateStatus(status.getMessage(), true);
 		}
 
+		/*This method is an overridden of GNSearchResultReady
+		 * and is where the results are put into a JamSongs object and inserted 
+		 * into the DB.
+		 * */
 		@Override
 		public void GNResultReady(GNSearchResult result) {
 			if (result.isFailure()) {
 				// An error occurred so display the error to the user.
 				String msg = String.format("[%d] %s", result.getErrCode(),
 				result.getErrMessage());
-				updateStatus(msg, false); // Display error while leaving the
-				// prior status update
+				updateStatus(msg, false); 
 			} else {
 				if (result.isFingerprintSearchNoMatchStatus()) {
 					// Handle special case of webservices lookup with no match
@@ -361,6 +374,10 @@ public class DropboxActivity extends ExpandableListActivity implements OnClickLi
 		if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
 			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
 			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			intent.putExtra("takeFromPrefs", true);
+			intent.putExtra("position", 0);
+			intent.putExtra("songTitle", nowPlayingTitleBtn.getText().toString());
+			intent.putParcelableArrayListExtra("albumsongs", albumSongs);
 			startActivity(intent);
 		}
 	}

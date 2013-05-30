@@ -21,22 +21,24 @@
         android:id="@id/android:list"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
+        android:layout_above="@+id/border"
         android:layout_below="@+id/album_name"
-        android:layout_above="@+id/relativeLayout1"
         android:cacheColorHint="@color/transparent"
         android:paddingLeft="20dp" />
+
     <View
     	android:layout_width="fill_parent"
         android:layout_height="1dp"
         android:id="@+id/border"
         android:layout_weight="1"
         android:background="@android:color/white" 
-        android:layout_alignTop="@+id/relativeLayout1"
+        android:layout_alignTop="@+id/relativeLayout2"
         android:visibility="invisible"/>
+
     <RelativeLayout
-        android:id="@+id/relativeLayout1"
         android:layout_width="wrap_content"
         android:layout_height="50dp"
+        android:id="@+id/relativeLayout2"
         android:layout_alignParentBottom="true"
         android:gravity="bottom" >
 
@@ -50,23 +52,22 @@
                 android:id="@+id/art_thumb"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
-                android:layout_gravity="left"
-                android:paddingLeft="-20dp"
                 android:layout_weight="1"
-                android:background="@color/transparent"
-                android:visibility="invisible" />
+                android:paddingLeft="-20dp"
+                android:layout_gravity="left"
+                android:visibility="invisible"
+                android:background="@color/transparent" />
 
             <Button
                 android:id="@+id/art_text"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:layout_weight="2"
-                android:text="Title"
                 android:visibility="invisible"
-                android:background="@color/transparent"
+                android:text="Title" 
+				android:background="@color/transparent"
                 android:textColor="#FFFFFF"
-                android:textAppearance="?android:attr/textAppearanceLarge"  />
+                android:textAppearance="?android:attr/textAppearanceLarge" />
         </LinearLayout>
     </RelativeLayout>
-
 </RelativeLayout>

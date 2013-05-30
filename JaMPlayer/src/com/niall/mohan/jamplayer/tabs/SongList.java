@@ -7,11 +7,37 @@ import java.util.ArrayList;
 
 import org.json.JSONException;
 
+import android.app.ListActivity;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+
 import com.android.gm.api.GoogleMusicApi;
 import com.android.gm.api.model.Song;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.DropboxLink;
-import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
 import com.dropbox.client2.session.AccessTokenPair;
@@ -26,51 +52,11 @@ import com.niall.mohan.jamplayer.JamService;
 import com.niall.mohan.jamplayer.MusicTable;
 import com.niall.mohan.jamplayer.R;
 import com.niall.mohan.jamplayer.SettingsActivity;
-import com.niall.mohan.jamplayer.adapters.GPlaySongAdapter;
 import com.niall.mohan.jamplayer.adapters.JamSongs;
 
-import android.app.ListActivity;
-import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
-import android.content.ContentUris;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.media.AudioManager;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Handler;
-import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.widget.SimpleCursorAdapter;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.TextUtils;
-import android.text.style.ImageSpan;
-import android.text.style.StyleSpan;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.TextView.BufferType;
-import android.widget.TextView;
-import android.widget.Toast;
-
+/*This is the class that represents the list of songs in an album.
+ * From here the user chooses a song to play. It contains inner Async tasks
+ * to retrieve Google Play and Dropbox streamable URL's.*/
 public class SongList extends ListActivity implements OnClickListener {
 	private static String TAG = "SongList";
 	TextView albumName;
@@ -80,7 +66,7 @@ public class SongList extends ListActivity implements OnClickListener {
 	String service;
 	ProgressDialog progress;
 	Cursor songCursor;
-	SimpleCursorAdapter adapter;
+	ArrayAdapter<JamSongs> adapter;
 	public ArrayList<JamSongs> albumSongs;
 	SharedPreferences prefs;
 	boolean servBound = false;
@@ -91,6 +77,7 @@ public class SongList extends ListActivity implements OnClickListener {
 	Button nowPlayingTitleBtn;
 	View border;
 	private boolean isPaused;
+	private String songName;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -101,8 +88,8 @@ public class SongList extends ListActivity implements OnClickListener {
 		Log.i(TAG, artist + "/" + album);
 		setContentView(R.layout.song_list);
 		albumName = (TextView) findViewById(R.id.album_name);
-		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
-		LocalBroadcastManager.getInstance(this).registerReceiver(paused, new IntentFilter(JamService.CHECK_PAUSED));
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(Constants.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(paused, new IntentFilter(Constants.CHECK_PAUSED));
 		albumName.setOnClickListener(this);
 		db = new MusicTable(this);
 		db.open();
@@ -121,10 +108,11 @@ public class SongList extends ListActivity implements OnClickListener {
 		albumName.setText(album);
 		
 	}
+	/*---------------------Receivers------------------------------*/
 	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.i(TAG, "onReceiver google");
+			Log.i(TAG, "SongsList receive");
 			Log.i(TAG, intent.getStringExtra("title"));
 			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
 			nowPlayingArtBtn.setVisibility(View.VISIBLE);
@@ -150,6 +138,7 @@ public class SongList extends ListActivity implements OnClickListener {
 			writer.commit();
 		}
 	};
+	/*------------------------------------------------------------*/
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		Log.i(TAG, "onSaveInstanceState");
@@ -165,7 +154,6 @@ public class SongList extends ListActivity implements OnClickListener {
 	protected void onResume() {
 		super.onResume();
 		doRetreive = false;
-		fillData();
 	}
 
 	@Override
@@ -177,6 +165,7 @@ public class SongList extends ListActivity implements OnClickListener {
 		super.onPause();
 	}
 
+	/*Initially fills the list with data from the DB. URL's aren't constructed here.*/
 	@SuppressWarnings("deprecation")
 	private void fillData() {
 		albumSongs = new ArrayList<JamSongs>();
@@ -196,12 +185,13 @@ public class SongList extends ListActivity implements OnClickListener {
 
 		}
 
-		adapter = new SimpleCursorAdapter(this, R.layout.list_child_item,
-				songCursor, new String[] { MusicTable.TITLE },
-				new int[] { R.id.child_text });
+		adapter = new ArrayAdapter<JamSongs>(getApplicationContext(), R.layout.list_child_item, R.id.child_text, albumSongs);
 		setListAdapter(adapter);
 	}
 
+	/*Fires the RetreiveGoogleUrl task to fetch the Google Play URL's. This is only fired when
+	 * the service == "google", which has been sent through an intent from the previous activity.*/
+	@SuppressWarnings("deprecation")
 	private void fillUrlData() {
 		RetreiveGoogleUrl urlTask = new RetreiveGoogleUrl(SongList.this) {
 			@Override
@@ -213,13 +203,15 @@ public class SongList extends ListActivity implements OnClickListener {
 			}
 		};
 		urlTask.execute(albumSongs);
-		adapter = new SimpleCursorAdapter(this, R.layout.list_child_item,
-				songCursor, new String[] { MusicTable.TITLE },
-				new int[] { R.id.child_text });
+		adapter = new ArrayAdapter<JamSongs>(getApplicationContext(), R.layout.list_child_item, R.id.child_text, albumSongs);
 		setListAdapter(adapter);
 		db.close();
 		doRetreive = false;
 	}
+	
+	/*Fires the RetreiveDropboxUrls task to fetch the Google Play URL's. This is only fired when
+	 * the service == "dropbox", which has been sent through an intent from the previous activity.*/
+	@SuppressWarnings("deprecation")
 	private void fillDbUrlData() {
 		RetreiveDropboxUrls urlTask = new RetreiveDropboxUrls() {
 			@Override
@@ -230,37 +222,35 @@ public class SongList extends ListActivity implements OnClickListener {
 			}
 		};
 		urlTask.execute(albumSongs);
-		adapter = new SimpleCursorAdapter(this, R.layout.list_child_item,
-				songCursor, new String[] { MusicTable.TITLE },
-				new int[] { R.id.child_text });
+		adapter = new ArrayAdapter<JamSongs>(getApplicationContext(), R.layout.list_child_item, R.id.child_text, albumSongs);
 		setListAdapter(adapter);
 		db.close();
 		doRetreive = false;
 	}
+	
+	/*Launches the PlayingActivity class, and does a check to see if, on the click
+	 * of a list item, a song is already playing, if so, it's a skip request; else play.*/
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		Log.i(TAG, "onListItemClick()");
-		Cursor c = ((SimpleCursorAdapter) l.getAdapter()).getCursor();
-		c.moveToPosition(position);
-		Log.i(TAG, c.getString(c.getColumnIndex("title")));
+		ArrayAdapter<JamSongs> c = ((ArrayAdapter<JamSongs>) l.getAdapter());
+		Log.i(TAG, c.getItem(position).getTitle());
 		final Intent play = new Intent(getApplicationContext(), PlayingActivity.class);
 		AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
-		play.putExtra("songTitle", c.getString(c.getColumnIndex("title")));
+		songName = String.valueOf(c.getItem(position));
+		play.putExtra("songTitle", songName);
 		play.putExtra("position", position);
 		play.putParcelableArrayListExtra("albumsongs", albumSongs);
-		isPaused = prefs.getBoolean("paused", false);
-		System.out.println(isPaused);
+		play.putExtra("action", "null");
 		if(am.isMusicActive() || isPaused == true) {
 			Log.i(TAG, "doing skip");
 			play.putExtra("action", "skip");
 			play.putExtra("position", position);
-			play.putParcelableArrayListExtra("albumsongs", albumSongs);
 			play.putExtra("paused", isPaused);
 			startActivity(play);
 		} else{
 			startActivity(play);
 		}
-		//doPlayPauseButton();
 		super.onListItemClick(l, v, position, id);
 
 	}
@@ -272,14 +262,20 @@ public class SongList extends ListActivity implements OnClickListener {
 			play.putExtra("position", 0);
 			play.putParcelableArrayListExtra("albumsongs", albumSongs);
 			startActivity(play);
-			//doPlayPauseButton();
 		} else if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
 			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
-			//intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			intent.putExtra("takeFromPrefs", true);
+			intent.putExtra("position", 0);
+			intent.putExtra("songTitle", songName);
+			intent.putParcelableArrayListExtra("albumsongs", albumSongs);
 			startActivity(intent);
 		}
 	}
 
+	/*The inner Async task for retrieving Google URL's.
+	 * Performs authentication incase the access token is out of date.
+	 * If so, it gets a new one.*/
 	public class RetreiveGoogleUrl extends
 			AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
 		private static final String TAG2 = "RetreiveGoogleUrl";
@@ -290,8 +286,7 @@ public class SongList extends ListActivity implements OnClickListener {
 		}
 
 		@Override
-		protected ArrayList<JamSongs> doInBackground(
-				ArrayList<JamSongs>... params) {
+		protected ArrayList<JamSongs> doInBackground(ArrayList<JamSongs>... params) {
 			Log.i(TAG2, "doInBackground()");
 			boolean success = false;
 			prefs = PreferenceManager
@@ -322,13 +317,11 @@ public class SongList extends ListActivity implements OnClickListener {
 				} catch (Exception e) {
 					try {
 						success = false;
-						prefs = PreferenceManager
-								.getDefaultSharedPreferences(SongList.this);
+						prefs = PreferenceManager.getDefaultSharedPreferences(SongList.this);
 						String email = prefs.getString("Google_email", "");
 						Log.i(TAG, "EMAIL SECOND" + email);
 						String token = GoogleAuthUtil.getToken(mActivity,
 								email, "sj");
-						Log.i(TAG, "TOKE MOTHERFUCKER: \n" + token);
 						if (!TextUtils.isEmpty(token)) {
 							GoogleMusicApi.createInstance(mActivity);
 							success = GoogleMusicApi.login(mActivity, token);
@@ -339,13 +332,9 @@ public class SongList extends ListActivity implements OnClickListener {
 							writer.putString("Google_email", email);
 							writer.commit();
 							if (!success)
-								GoogleAuthUtil
-										.invalidateToken(mActivity, token);
+								GoogleAuthUtil.invalidateToken(mActivity, token);
 						}
 					} catch (GooglePlayServicesAvailabilityException playEx) {
-						// GooglePlayServices.apk is either old, disabled, or
-						// not present.
-						// mActivity.showDialog(playEx.getConnectionStatusCode());
 						GooglePlayServicesUtil.getErrorDialog(
 								playEx.getConnectionStatusCode(), mActivity,
 								1001).show();
@@ -368,7 +357,8 @@ public class SongList extends ListActivity implements OnClickListener {
 					true);
 			super.onPreExecute();
 		}
-
+		/*A small adapter to convert from a JamSongs to a GMusic Song,
+		 * so that we can fetch the url's from Google.*/
 		private class GoogleAdapter extends Song {
 			JamSongs song;
 
@@ -388,6 +378,8 @@ public class SongList extends ListActivity implements OnClickListener {
 			}
 		}
 	}
+	
+	/*---------------Dropbox------------------------------*/
 	private void buildDbSess() {
 		prefs = getSharedPreferences(Constants.ACCOUNT_PREFS_NAME, 0);
 		String key = prefs.getString(Constants.ACCESS_KEY_NAME, null);
@@ -399,6 +391,8 @@ public class SongList extends ListActivity implements OnClickListener {
         AndroidAuthSession session = new AndroidAuthSession(appKeyPair, Constants.ACCESS_TYPE, accessToken);
 		mApi = new DropboxAPI<AndroidAuthSession>(session);
 	}
+	
+	/*The Async to retrieve the URL's*/
 	public class RetreiveDropboxUrls extends AsyncTask<ArrayList<JamSongs>, Void, ArrayList<JamSongs>> {
 		private static final String TAG4 = "RetreiveDropboxUrls";
 		@Override
@@ -412,7 +406,6 @@ public class SongList extends ListActivity implements OnClickListener {
 			Log.i(TAG4, "doInBackground()");
 			ArrayList<JamSongs> songs = params[0];
 			try {
-				JamSongs tempSong;
 	            for(int i = 0; i < songs.size(); i++) {
 	            	DropboxLink url = mApi.media(songs.get(i).getPath(), false);
 	            	//Log.i(TAG, url.url);

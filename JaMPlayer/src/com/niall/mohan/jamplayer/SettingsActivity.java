@@ -16,7 +16,6 @@ import android.accounts.OperationCanceledException;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -42,7 +41,6 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.AppKeyPair;
-import com.dropbox.client2.session.Session.AccessType;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
@@ -74,15 +72,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	EditText last_fm_username;
 	EditText last_fm_pswd;
 	ProgressBar progress;
-    private static final String YOUR_APP_CONSUMER_KEY = "9ba8dd1f82ad58e8470b3e5a69cc828c";
-    private static final String YOUR_APP_CONSUMER_SECRET = "9269708fca324437b41fb738fb78a5f7";
-    final static private String APP_KEY = "7d5b3w41ptwxz3t";
-    final static private String APP_SECRET = "1nkra6j4iyhnvnp";
-    final static private AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
-    final static private String ACCOUNT_PREFS_NAME = "prefs";
-    final static private String ACCESS_KEY_NAME = "ACCESS_KEY";
-    final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
-    final static private String GRACENOTE_KEY = "13046016-57E031D9977B0F9F9DECABBC977DE50B";
     private boolean mLoggedIn;
 	public DropboxAPI<AndroidAuthSession> dApi;
     SharedPreferences preferences;
@@ -93,7 +82,7 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	private static final int SCLOUD = 2;
 	private static final int LAST_FM = 3;
 	final URI REDIRECT_URI = URI.create("http://developers.soundcloud.com/callback.html");
-	final ApiWrapper sCloudWrapper = new ApiWrapper(YOUR_APP_CONSUMER_KEY, YOUR_APP_CONSUMER_SECRET, REDIRECT_URI, null);
+	final ApiWrapper sCloudWrapper = new ApiWrapper(Constants.YOUR_APP_CONSUMER_KEY, Constants.YOUR_APP_CONSUMER_SECRET, REDIRECT_URI, null);
 	String actualToken="";
 	String scope;
 	GoogleMusicLoginTask login;
@@ -187,13 +176,10 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 									writer.commit();
 									connectSCloud.setText("Unlink from Soundcloud");
 								} catch (OperationCanceledException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								} catch (AuthenticatorException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								} catch (IOException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								}						
 	    					}
@@ -348,9 +334,6 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 	private void logOut() {
         // Remove credentials from the session
         dApi.getSession().unlink();
-
-        // Clear our stored keys
-       // clearKeys();
         // Change UI state to display logged out version
         setLoggedIn(false);
     }
@@ -362,15 +345,15 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     	
     }
 	private AndroidAuthSession buildSession() {
-        AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
+        AppKeyPair appKeyPair = new AppKeyPair(Constants.APP_KEY, Constants.APP_SECRET);
         AndroidAuthSession session;
         String[] stored = getKeys();
         if (stored != null) {
         	//RequestTokenPair token = new RequestTokenPair(stored[0], stored[1]);
             AccessTokenPair accessToken = new AccessTokenPair(stored[0], stored[1]);
-            session = new AndroidAuthSession(appKeyPair, ACCESS_TYPE, accessToken);
+            session = new AndroidAuthSession(appKeyPair, Constants.ACCESS_TYPE, accessToken);
         } else {
-            session = new AndroidAuthSession(appKeyPair, ACCESS_TYPE);
+            session = new AndroidAuthSession(appKeyPair, Constants.ACCESS_TYPE);
         }
 
         return session;
@@ -378,9 +361,9 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
 
 
     private String[] getKeys() {
-        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
-        String key = prefs.getString(ACCESS_KEY_NAME, null);
-        String secret = prefs.getString(ACCESS_SECRET_NAME, null);
+        SharedPreferences prefs = getSharedPreferences(Constants.ACCOUNT_PREFS_NAME, 0);
+        String key = prefs.getString(Constants.ACCESS_KEY_NAME, null);
+        String secret = prefs.getString(Constants.ACCESS_SECRET_NAME, null);
         if (key != null && secret != null) {
         	String[] ret = new String[2];
         	ret[0] = key;
@@ -392,10 +375,10 @@ public class SettingsActivity extends AccountAuthenticatorActivity {
     }
     private void storeKeys(String key, String secret) {
         // Save the access key for later
-        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        SharedPreferences prefs = getSharedPreferences(Constants.ACCOUNT_PREFS_NAME, 0);
         Editor edit = prefs.edit();
-        edit.putString(ACCESS_KEY_NAME, key);
-        edit.putString(ACCESS_SECRET_NAME, secret);
+        edit.putString(Constants.ACCESS_KEY_NAME, key);
+        edit.putString(Constants.ACCESS_SECRET_NAME, secret);
         edit.commit();
     }
  

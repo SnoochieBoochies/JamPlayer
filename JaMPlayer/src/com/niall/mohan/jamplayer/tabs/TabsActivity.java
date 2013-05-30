@@ -1,51 +1,30 @@
 package com.niall.mohan.jamplayer.tabs;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
-import com.niall.mohan.jamplayer.JamService;
-import com.niall.mohan.jamplayer.R;
-import com.niall.mohan.jamplayer.SettingsActivity;
-import com.niall.mohan.jamplayer.WriteToCache;
-
 import android.app.TabActivity;
-import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
-import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
+import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.SettingsActivity;
+
 //Using TabActivity as my test phone is running 2.3 and I don't have time to mess with ActionbarSherlock...
+/*This class acts as the host for the tabs. It represents the tab buttons at the top of the screen
+ * and adds the bindings of each activity to those tabs.*/
 @SuppressWarnings("deprecation")
-public class TabsActivity extends TabActivity implements OnTabChangeListener, OnClickListener {
+public class TabsActivity extends TabActivity implements OnTabChangeListener {
 	private static String TAG = "TabsActivity";
-	private TabHost mTabHost;	
+	public TabHost mTabHost;	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//startService(new Intent(JamService.ACTION_NONE));
-		//startService(new Intent(this,JamService.class));
 		setContentView(R.layout.tabmain);
 		Log.i(TAG, "onCreate()");
 		if (savedInstanceState != null) {
-            //mTabHost.setCurrentTabByTag(savedInstanceState.getString("tab")); //set the tab as per the saved state
-            //mTabHost.getTabWidget().getChildAt(0).getLayoutParams().width =(int) 30;
         }
 		createTabs();
 	}
@@ -92,10 +71,6 @@ public class TabsActivity extends TabActivity implements OnTabChangeListener, On
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.sub_menu_one, menu);
 		return true;
-	}
-	@Override
-	public void onClick(View v) {
-
 	}
 
 }

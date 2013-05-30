@@ -2,12 +2,6 @@ package com.niall.mohan.jamplayer.tabs;
 
 import java.util.ArrayList;
 
-import com.niall.mohan.jamplayer.JamService;
-import com.niall.mohan.jamplayer.MusicTable;
-import com.niall.mohan.jamplayer.R;
-import com.niall.mohan.jamplayer.WriteToCache;
-import com.niall.mohan.jamplayer.adapters.JamSongs;
-
 import android.app.ExpandableListActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -16,7 +10,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -29,8 +22,14 @@ import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.SimpleCursorTreeAdapter;
-import android.widget.TextView;
 
+import com.niall.mohan.jamplayer.Constants;
+import com.niall.mohan.jamplayer.MusicTable;
+import com.niall.mohan.jamplayer.R;
+import com.niall.mohan.jamplayer.adapters.JamSongs;
+
+/*This is the google Play activity tab class. Does the same as the Dropbox+Local activity classes, only this class
+ * retrieves the songs related to the "google" service.*/
 public class GooglePlayActivity extends ExpandableListActivity implements OnClickListener {
 	private static String TAG = "GooglePlayActivity";
 	private ArtistAlbumListAdapter adapter;
@@ -60,16 +59,15 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 
 		}
 		setContentView(R.layout.tab_content_layout);
-		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(Constants.ACTION_NOW_PLAYING));
 		db = new MusicTable(this);
 		db.open();
 		fillData();
-		//if music is playing, make the footer banner to go to now playing activity.
 	}
 	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.i(TAG, "onReceiver google");
+			Log.i(TAG, "Google receive");
 			Log.i(TAG, intent.getStringExtra("title"));
 			nowPlayingArtBtn = (ImageButton) findViewById(R.id.art_thumb);
 			nowPlayingArtBtn.setVisibility(View.VISIBLE);
@@ -83,6 +81,7 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 			nowPlayingTitleBtn.setOnClickListener(GooglePlayActivity.this);
 			border = (View) findViewById(R.id.border);
 			border.setVisibility(View.VISIBLE);
+			albumSongs = intent.getParcelableArrayListExtra("albumsongs");
 		}
 	};
 	@Override
@@ -98,12 +97,10 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 	@Override
 	protected void onPause() {
 		super.onPause();
-		unregisterReceiver(nowPlaying);
 	}
 	@Override
 	protected void onResume() {
 		fillData();
-		registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
 		super.onResume();
 	}
 	@Override
@@ -118,6 +115,7 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 		artistCursor.close();
 		db.close();
 	}
+	/*Fills the expandable list with artists + albums from the DB*/
 	private void fillData() {
 		Log.i(TAG, "fillData()");
 		artistCursor = db.getArtistsByService("google");
@@ -128,6 +126,8 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 		setListAdapter(adapter);
 		db.close();
 	}
+	/*This method fires the SongList class on the click of an album.
+	 * The SongList class represents the songs in an album*/
 	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
 		Log.i(TAG, "onChildClick()");
@@ -136,7 +136,6 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 		currentAlbum = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.ALBUM));
 		currentService = malbumCur.getString(malbumCur.getColumnIndex(MusicTable.SERVICE_TYPE));
 		intent = new Intent(this, SongList.class);
-		intent.putExtra("albumId", currentAlbumId);
 		//unknown album
 		if(currentAlbum == null || currentAlbum.equals(MediaStore.UNKNOWN_STRING)) {
 			artistCursor.moveToPosition(groupPosition);
@@ -150,6 +149,7 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 		startActivity(intent);
 		return true;
 	}
+	/*Class that populates the expandable list.*/
 	private class ArtistAlbumListAdapter extends SimpleCursorTreeAdapter {
 
 		public ArtistAlbumListAdapter(Cursor cursor, Context context,
@@ -176,11 +176,16 @@ public class GooglePlayActivity extends ExpandableListActivity implements OnClic
 		}
 
 	}
+	
 	@Override
 	public void onClick(View v) {
 		if(v == nowPlayingArtBtn || v == nowPlayingTitleBtn) {
 			Intent intent = new Intent(getApplicationContext(), PlayingActivity.class);
 			intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+			intent.putExtra("takeFromPrefs", true);
+			intent.putExtra("position", 0);
+			intent.putExtra("songTitle", nowPlayingTitleBtn.getText().toString());
+			intent.putParcelableArrayListExtra("albumsongs", albumSongs);
 			startActivity(intent);
 		}
 	}

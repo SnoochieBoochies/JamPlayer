@@ -3,6 +3,11 @@ package com.niall.mohan.jamplayer.adapters;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+/*The representation of a song in this app.
+ * It implements parcelable so I can send lists of 
+ * JamSongs over Intents to other activities, ie: a list of songs in an album
+ * from GooglePlayActivity to SongList activity.
+*/
 public class JamSongs  implements Parcelable{
 	private String title; // media title
 	private String path; // media path
@@ -15,7 +20,7 @@ public class JamSongs  implements Parcelable{
 	private int trackNum;
 	private String id;
 	private String artworkUri;
-	private long albumId; //local only
+	private long albumId; 
 	public JamSongs(String title, String path, String service, String album,String duration, String artist, int trackNum, String id, String artworkUri, long albumId) {
 		this.title = title;
 		this.path = path;
@@ -93,7 +98,10 @@ public class JamSongs  implements Parcelable{
 	}
 	@Override
 	public String toString() {
-		return this.title+" - "+this.album;
+		if(service.equals("google") || service.equals("dropbox") || service.equals("local"))
+			return this.title;
+		else
+			return this.title+" - "+this.album;
 	}
 	/*implements parceable to be able to send an arraylist of jamsongs to the service, so we can play an album etc.*/
 	@Override

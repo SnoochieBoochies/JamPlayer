@@ -25,6 +25,10 @@ import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+/*This utility class has methods for making a directory
+ * for our temp songs downloaded from dropbox for the PCM + Gracenote stuff.
+ * It also handles the getting of Artwork locally and over http.
+*/
 public class WriteToCache {
 	private static final String TAG = "JaM Music";
 	public boolean isExternalStorageWritable() {
@@ -110,59 +114,5 @@ public class WriteToCache {
 			return BitmapFactory.decodeResource(context.getResources(), R.drawable.dummy_album_art);
 		}
 		return art;
-	}
-	public void writeArrayList(ArrayList<JamSongs> songs) {
-		 try {
-			 PrintWriter indices = new PrintWriter(new File(getAlbumStorageDir()
-                    + "/arraylist"+ ".tmp"));
-			 for(int i = 0; i < songs.size(); i++) {
-				indices.println(songs.get(i).getTitle());
-				indices.println(songs.get(i).getPath());
-				indices.println(songs.get(i).getService());
-				indices.println(songs.get(i).getAlbum());
-				indices.println(songs.get(i).getDuration());
-				indices.println(songs.get(i).getArtist());
-				indices.println(String.valueOf(songs.get(i).getTrackNum()));
-				indices.println(songs.get(i).getId());
-				indices.println(songs.get(i).getArtwork());
-				indices.println(String.valueOf(songs.get(i).getAlbumId()));
-			 }
-			 indices.close();
-
-            // RENAME NEW FILE TO THAT OF THE PREVIOUS FILE
-
-            // File myFile = new File("/sdcard/mysdfile.txt");
-            File oldFile = new File(getAlbumStorageDir() + "/arraylist");
-
-            File newFile = new File(getAlbumStorageDir() + "/arraylist"+ ".tmp");
-
-            oldFile.delete();
-
-            newFile.renameTo(oldFile);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-	}
-	public ArrayList<JamSongs> getArrayList() {
-		ArrayList<JamSongs> songs = new ArrayList<JamSongs>();
-		String full = "";
-		try {
-			File readFile = new File(getAlbumStorageDir()+"/arraylist");
-			FileInputStream is = new FileInputStream(readFile);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-			Scanner in = new Scanner(new File(getAlbumStorageDir()+"/arraylist"));
-			String rowData = "";
-			String buffer = "";
-			while(in.hasNext()) {
-				songs.add(new JamSongs(in.nextLine(), in.nextLine(), in.nextLine(), in.nextLine(), in.nextLine(), in.nextLine(), Integer.valueOf(in.nextLine()), in.nextLine(),
-						in.nextLine(), Long.valueOf(in.nextLine())));
-			}
-			reader.close();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		return songs;
 	}
 }

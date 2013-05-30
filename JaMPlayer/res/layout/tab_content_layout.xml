@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:layout_gravity="top"
     android:background="@drawable/blue_bg"
+    android:visibility="visible"
     tools:context=".MainActivity"
     tools:ignore="ExtraText" >
 
@@ -44,7 +45,8 @@
         android:layout_height="50dp"
         android:id="@+id/relativeLayout2"
         android:layout_alignParentBottom="true"
-        android:gravity="bottom" >
+        android:gravity="bottom"
+        android:visibility="visible" >
 
         <LinearLayout
             android:layout_width="fill_parent"

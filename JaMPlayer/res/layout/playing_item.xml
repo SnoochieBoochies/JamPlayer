@@ -26,7 +26,8 @@
         android:layout_alignParentRight="true"
         android:layout_below="@+id/song_name"
         android:layout_weight="0.41"
-        android:src="@drawable/dummy_album_art" />
+        android:src="@drawable/dummy_album_art" 
+        android:visibility="invisible"/>
 
      <ImageButton
 	        android:id="@+id/control_play_btn"
@@ -63,6 +64,7 @@
 	        android:gravity="right"
 	        android:paddingRight="5dip"
 	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:text="--:--"
 	        android:textSize="14sp"
 	        android:textStyle="bold" />
 
@@ -76,8 +78,19 @@
 	        android:layout_toLeftOf="@+id/control_play_btn"
 	        android:paddingLeft="5dip"
 	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:text="--:--"
 	        android:textSize="14sp"
 	        android:textStyle="bold" />
 
+		<ProgressBar
+		    android:id="@+id/playing_loader"
+		    style="@android:attr/progressBarStyleLarge"
+		    android:layout_width="100dp"
+		    android:layout_height="100dp"
+		    android:layout_alignTop="@+id/album_art"
+		    android:layout_centerHorizontal="true"
+		    android:layout_marginTop="148dp"
+		    android:indeterminateBehavior="cycle"
+		    android:visibility="gone" />
 
 </RelativeLayout>

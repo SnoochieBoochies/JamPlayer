@@ -4,13 +4,14 @@ import android.util.Log;
 
 import com.android.gm.api.model.Song;
 
+/*Adapter class of JamSongs for GMusic API "Songs" object*/
 public class GPlaySongAdapter extends JamSongs {
 	Song song;
 	public GPlaySongAdapter(Song song) {
 		this.song = song;
 	}
 	public JamSongs setMediaInfo(Song s) {
-		JamSongs mediaInfo = new JamSongs();//new JamSongs(s.getTitle(),s.getUrl(),1,s.getAlbum(),String.valueOf(s.getDurationMillis()),s.getArtist(),s.getTitle());
+		JamSongs mediaInfo = new JamSongs();
 		mediaInfo.setTitle(s.getTitle());
 		mediaInfo.setPath(s.getUrl());
 		mediaInfo.setService("google");

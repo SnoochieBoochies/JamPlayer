@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -23,6 +24,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -35,6 +37,9 @@ import com.niall.mohan.jamplayer.SettingsActivity;
 import com.niall.mohan.jamplayer.WriteToCache;
 import com.niall.mohan.jamplayer.adapters.JamSongs;
 
+/*This is the class that is created after selecting a song to play.
+ *It holds the album art, player buttons and title of the currently playing song.
+ */
 public class PlayingActivity extends Activity implements OnClickListener, OnSeekBarChangeListener{
 	private static String TAG = "PlayingActivity";
 	ImageButton mPlayPauseButton;
@@ -44,6 +49,7 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 	SeekBar seekbar;
 	Handler handler;
 	ImageView albumArt;
+	ProgressBar loader;
 	SharedPreferences prefs;
 	boolean servBound = false;
 	JamService mService;
@@ -59,6 +65,7 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 	static String artUri;
 	static long albId;
 	private boolean isPaused;
+	private boolean takeFromPrefs;
 	WriteToCache cache = new WriteToCache();
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -72,87 +79,55 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 		seekbar = (SeekBar) findViewById(R.id.progress);
 		seekbar.setOnSeekBarChangeListener(this);
 		serviceIntent = new Intent(this, JamService.class);
-		registerReceiver(seekReceiver, new IntentFilter(JamService.ACTION_SEEK));
+		registerReceiver(seekReceiver, new IntentFilter(Constants.ACTION_SEEK));
 		in = new Intent(Constants.BROADCAST_SEEKBAR);
 		currentTime = (TextView) findViewById(R.id.currenttime);
 		totalTime = (TextView) findViewById(R.id.totaltime);
+		loader = (ProgressBar) findViewById(R.id.playing_loader);
+		loader.setVisibility(View.VISIBLE);
 		final Intent receive = getIntent();
+		/*-----------------------handling different states of entering the activity------------------------*/
 		albumSongs = new ArrayList<JamSongs>();
-		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(JamService.ACTION_NOW_PLAYING));
-		LocalBroadcastManager.getInstance(this).registerReceiver(paused, new IntentFilter(JamService.CHECK_PAUSED));
-		final WriteToCache cache = new WriteToCache();
+		LocalBroadcastManager.getInstance(this).registerReceiver(nowPlaying, new IntentFilter(Constants.ACTION_NOW_PLAYING));
+		LocalBroadcastManager.getInstance(this).registerReceiver(paused, new IntentFilter(Constants.CHECK_PAUSED));
+		LocalBroadcastManager.getInstance(this).registerReceiver(stopReceiver, new IntentFilter(Constants.ACTION_STOP));
 		prefs = PreferenceManager.getDefaultSharedPreferences(PlayingActivity.this);
 		String artUriForPrefs = prefs.getString("artwork", "null");
 		Log.i(TAG, "URI "+artUriForPrefs);
-		long albIdForPrefs = prefs.getLong("id", 0);
-		String act = prefs.getString("skip", "null");
-		int positionPrefs = prefs.getInt("position", 0);
-		Log.i(TAG, String.valueOf(positionPrefs));
-		AudioManager am = (AudioManager) PlayingActivity.this.getSystemService(Context.AUDIO_SERVICE);
-		if(am.isMusicActive() || isPaused) {
-			
-			try {
-				
-				action = receive.getStringExtra("action");
-				position = receive.getIntExtra("position", 0);
-				//albumSongs = receive.getParcelableArrayListExtra("albumsongs");
-				albumSongs = cache.getArrayList();
-				if(albumSongs.size() > 0) {
-					Log.i(TAG, "albumSongs not empty");
-					songName.setText(receive.getStringExtra("songTitle"));
-					artUri = albumSongs.get(position).getArtwork();
-					albId = albumSongs.get(position).getAlbumId();
-					art = cache.getArtwork(artUri, albId, getApplicationContext());
-					albumArt.setImageBitmap(art);
-				} else {
-					songName.setText(albumSongs.get(0).getTitle());
-					artUri = albumSongs.get(0).getArtwork();
-					albId = albumSongs.get(0).getAlbumId();
-					art = cache.getArtwork(artUri, albId, getApplicationContext());
-					albumArt.setImageBitmap(art);
-					action ="";
-					
-				}
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-			
-			if(action.equals("skip")) {
-				Intent skip = new Intent(JamService.ACTION_SKIP);
-				skip.putExtra("position", position);
-				skip.putParcelableArrayListExtra("albumsongs", albumSongs);
-				skip.putExtra("art", art);
-				skip.putExtra("skip", action);
-				Log.i(TAG, "do skip");
-				startService(skip);
-			} else {//else i'm going back into the activity from pressing one of the buttons.
-				Log.i(TAG, "else after click");
-				songName.setText(prefs.getString("songTitle", ""));
-				final String tempArtUri = prefs.getString("artwork", "null");
-				final long tempId = prefs.getLong("id", 0);
-				Thread mis = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							art = cache.getArtwork(tempArtUri, tempId, getApplicationContext());
-							albumArt.setImageBitmap(art);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
-				});
-				mis.run();
-			}
-		} else {
+		AudioManager am = (AudioManager) PlayingActivity.this.getSystemService(Context.AUDIO_SERVICE);		
+		handleBroadcasts(receive,am);
+		/*---------------------------------------------------------------*/
+		db = new MusicTable(this);
+		db.open();
+		doPlayPauseButton();
+		Intent intent = new Intent(Constants.ACTION_PLAY);
+		intent.putExtra("position", position);
+		intent.putParcelableArrayListExtra("albumsongs", albumSongs);
+		intent.putExtra("art", art);
+		startService(intent);
+	}
+	/*this method handles whether the user entered the activity by
+	 * playing a song initially, skipping to a song, and doing these if music is paused
+	 * */
+	private void handleBroadcasts(Intent receive, AudioManager am) {
+		LoaderTask load = new LoaderTask();
+		action = receive.getStringExtra("action");
+		position = receive.getIntExtra("position", 0);
+		//albumSongs = receive.getParcelableArrayListExtra("albumsongs");
+		boolean tempPaused = prefs.getBoolean("paused", false);
+		Log.i(TAG,"stored pause"+String.valueOf(tempPaused));
+		takeFromPrefs = receive.getBooleanExtra("takeFromPrefs", false); //sent from the banner press to say take from prefs instead of intent.
+		if(am.isMusicActive() || isPaused || tempPaused == true) {
+			load.execute(receive);
+		} else {//done the first time the activity is created
+			loader.setVisibility(View.VISIBLE);
 			Log.i(TAG, "else regular");
-			//Intent receive = getIntent();
 			position = receive.getIntExtra("position", 0);
 			albumSongs = receive.getParcelableArrayListExtra("albumsongs");
 			songName.setText(receive.getStringExtra("songTitle"));
 			action = receive.getStringExtra("action");
 			artUri = albumSongs.get(position).getArtwork();
 			albId = albumSongs.get(position).getAlbumId();
-			cache.writeArrayList(albumSongs);
 			Editor writer = prefs.edit();
 			writer.putString("artwork", artUri);
 			writer.putLong("id", albId);
@@ -164,22 +139,12 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			albumArt.setVisibility(View.VISIBLE);
 			albumArt.setImageBitmap(art);
-			
+			loader.setVisibility(View.GONE);
 		}
-		//loader.setVisibility(View.GONE);
-		db = new MusicTable(this);
-		db.open();
-		doPlayPauseButton();
-		Intent intent = new Intent(JamService.ACTION_PLAY);
-		intent.putExtra("position", position);
-		intent.putParcelableArrayListExtra("albumsongs", albumSongs);
-		intent.putExtra("art", art);
-		startService(intent);
-		
-		
-		
 	}
+	/*----------Receivers----------------------------------*/
 	private BroadcastReceiver nowPlaying = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -192,9 +157,30 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			isPaused = intent.getBooleanExtra("paused", false);
-			Log.i(TAG, String.valueOf(isPaused));
+			Log.i(TAG, "Pause"+String.valueOf(isPaused));
 		}
 	};
+	private BroadcastReceiver stopReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.i(TAG, "stopReceiver");
+			mPlayPauseButton.setImageDrawable(getBaseContext().getResources().getDrawable(R.drawable.ic_appwidget_music_play));		
+		}
+	};
+	private BroadcastReceiver seekReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.i(TAG, "onReceive()");
+			int counter = intent.getIntExtra("counter", 0);
+			int mediamax = intent.getIntExtra("mediamax", 0);
+			seekMax = mediamax;
+			currentTime.setText(intent.getStringExtra("currentTime"));
+			totalTime.setText(intent.getStringExtra("endTime"));
+			seekbar.setMax(seekMax);
+			seekbar.setProgress(counter);
+		}
+	};
+	/*------------------------------------------------------*/
 	@Override
 	public void onBackPressed() {
 		super.onBackPressed();
@@ -220,31 +206,27 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 	protected void onPause() {
 		super.onPause();
 		Log.i(TAG, "onPause");
+		Editor writer = prefs.edit();
+		writer.putString("artwork", artUri);
+		writer.putLong("id", albId);
+		writer.putString("skip", action);
+		writer.putInt("position", position);
+		writer.putBoolean("paused", isPaused);
+		writer.commit();
 		unregisterReceiver(seekReceiver);
 	}
 	@Override
 	protected void onResume() {
 		super.onResume();
-		registerReceiver(seekReceiver, new IntentFilter(JamService.ACTION_SEEK));
+		registerReceiver(seekReceiver, new IntentFilter(Constants.ACTION_SEEK));
 	}
 
+	/*Toggles the play/pause button*/
 	private void doPlayPauseButton() {
 		mPlayPauseButton.setImageDrawable(getBaseContext().getResources()
 				.getDrawable(R.drawable.playback_toggle));
 	}
-	private BroadcastReceiver seekReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Log.i(TAG, "onReceive()");
-			int counter = intent.getIntExtra("counter", 0);
-			int mediamax = intent.getIntExtra("mediamax", 0);
-			seekMax = mediamax;
-			currentTime.setText(intent.getStringExtra("currentTime"));
-			totalTime.setText(intent.getStringExtra("endTime"));
-			seekbar.setMax(seekMax);
-			seekbar.setProgress(counter);
-		}
-	};
+	
 	@Override
 	public void onProgressChanged(SeekBar arg0, int arg1, boolean fromUser) {
 		if (fromUser) {
@@ -269,13 +251,13 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 		if (arg0 == mPlayPauseButton) {
 			if (arg0.isSelected()) {
 				arg0.setSelected(false);
-				startService(new Intent(JamService.ACTION_PLAY));
+				startService(new Intent(Constants.ACTION_PLAY));
 				doPlayPauseButton();
 				// ...Handle toggle off
 			} else {
 				arg0.setSelected(true);
 				doPlayPauseButton();
-				startService(new Intent(JamService.ACTION_PAUSE));
+				startService(new Intent(Constants.ACTION_PAUSE));
 				// ...Handled toggle on
 			}
 		}
@@ -296,5 +278,67 @@ public class PlayingActivity extends Activity implements OnClickListener, OnSeek
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.sub_menu_one, menu);
 		return true;
+	}
+	/*This inner ASync task gets called in handleBroadcasts if the user is returning to the
+	 * activity from somewhere else. ie: skipping, or pressing the banner.*/
+	private class LoaderTask extends AsyncTask<Intent, Void, Void> {
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+		}
+		@Override
+		protected void onPostExecute(Void result) {
+			loader.setVisibility(View.GONE);
+			albumArt.setImageBitmap(art);
+			albumArt.setVisibility(View.VISIBLE);
+			super.onPostExecute(result);
+		}
+		@Override
+		protected Void doInBackground(Intent... params) {
+			Intent receive = params[0];
+			try {
+				action = receive.getStringExtra("action");
+				albumSongs = receive.getParcelableArrayListExtra("albumsongs");
+				position = receive.getIntExtra("position", 0);
+				System.out.println(takeFromPrefs);
+				if(!takeFromPrefs) {
+					Log.i(TAG, "albumSongs not empty");
+					songName.setText(receive.getStringExtra("songTitle"));
+					//Log.i(TAG, receive.getStringExtra("songTitle"));
+					artUri = albumSongs.get(position).getArtwork();
+					//Log.i(TAG, artUri);
+					albId = albumSongs.get(position).getAlbumId();
+					art = cache.getArtwork(artUri, albId, getApplicationContext());
+				}  else {//else i'm going back into the activity from pressing one of the buttons.
+					Log.i(TAG, "else after click");
+					songName.setText(receive.getStringExtra("songTitle"));
+					Log.i(TAG, receive.getStringExtra("songTitle"));
+					albumSongs = receive.getParcelableArrayListExtra("albumsongs");
+					position = receive.getIntExtra("position", 0);
+					artUri = albumSongs.get(position).getArtwork();
+					Log.i(TAG, artUri);
+					albId = albumSongs.get(position).getAlbumId();
+					art = cache.getArtwork(artUri, albId, getApplicationContext());
+					action = "";
+				}
+				if(action.equals("skip")) {
+					Intent skip = new Intent(Constants.ACTION_SKIP);
+					skip.putExtra("position", position);
+					skip.putParcelableArrayListExtra("albumsongs", albumSongs);
+					skip.putExtra("art", art);
+					skip.putExtra("skip", action);
+					Log.i(TAG, "do skip");
+					startService(skip);
+				}
+				Editor writer = prefs.edit();
+				writer.remove("paused");
+				writer.commit();
+				
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			return null;
+		}
+		
 	}
 }
